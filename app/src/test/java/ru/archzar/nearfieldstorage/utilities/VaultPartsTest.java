@@ -84,6 +84,21 @@ public class VaultPartsTest {
         assertThrows(IllegalArgumentException.class, () -> readDump("A".repeat(400_000)));
     }
 
+    @Test
+    public void capacityMathMatchesUtf8AndTheSerializedParts() throws Exception {
+        String text = "AéЯ中🔐\uD800!";
+        int textBytes = VaultParts.utf8Bytes(text);
+        assertEquals(text.getBytes(StandardCharsets.UTF_8).length, textBytes);
+        int encryptedBytes = VaultParts.encryptedSize(textBytes);
+        assertEquals(textBytes, VaultParts.textCapacity(encryptedBytes));
+        List<VaultParts.Part> parts = VaultParts.create(text, PASSWORD, 5);
+        for (int slot = 0; slot < parts.size(); slot++) {
+            assertEquals(parts.get(slot).encode().length,
+                    VaultParts.PART_HEADER_BYTES
+                            + VaultParts.chunkSize(encryptedBytes, parts.size(), slot));
+        }
+    }
+
     private static VaultParts.Assembly readDump(String text) throws IOException {
         return VaultParts.readDump(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
     }

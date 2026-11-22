@@ -17,6 +17,7 @@ final class VaultCrypto {
     private static final int NONCE_BYTES = 12;
     private static final int TAG_BYTES = 16;
     private static final int HEADER_BYTES = 1 + SALT_BYTES + NONCE_BYTES;
+    static final int OVERHEAD_BYTES = HEADER_BYTES + TAG_BYTES;
     private static final int ITERATIONS = 600_000;
     private static final int KEY_BITS = 256;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -24,7 +25,7 @@ final class VaultCrypto {
     private VaultCrypto() {}
 
     static boolean isSupported(byte[] data) {
-        return data.length >= HEADER_BYTES + TAG_BYTES && data[0] == VERSION;
+        return data.length >= OVERHEAD_BYTES && data[0] == VERSION;
     }
 
     static byte[] encrypt(String text, char[] password, byte[] context)

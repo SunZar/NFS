@@ -19,11 +19,47 @@ public final class VaultParts {
 
     private static final byte VERSION = 1;
     private static final int CONTEXT_BYTES = 1 + 2 * Long.BYTES + 1;
-    private static final int HEADER_BYTES = CONTEXT_BYTES + 1;
+    public static final int PART_HEADER_BYTES = CONTEXT_BYTES + 1;
     private static final String DUMP_HEADER = "NFS-DUMP-1";
     private static final int MAX_DUMP_BYTES = 4 * ((CONTEXT_BYTES + MAX_BYTES + 2) / 3) + 8192;
 
     private VaultParts() {}
+
+    public static int utf8Bytes(CharSequence text) {
+        int bytes = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            if (character < 0x80) {
+                bytes++;
+            } else if (character < 0x800) {
+                bytes += 2;
+            } else if (Character.isSurrogate(character)) {
+                if (Character.isHighSurrogate(character) && i + 1 < text.length()
+                        && Character.isLowSurrogate(text.charAt(i + 1))) {
+                    bytes += 4;
+                    i++;
+                } else {
+                    // String.getBytes(UTF_8) encodes an unpaired surrogate as '?'.
+                    bytes++;
+                }
+            } else {
+                bytes += 3;
+            }
+        }
+        return bytes;
+    }
+
+    public static int encryptedSize(int textBytes) {
+        return textBytes + VaultCrypto.OVERHEAD_BYTES;
+    }
+
+    public static int textCapacity(int encryptedCapacity) {
+        return Math.max(0, Math.min(MAX_BYTES, encryptedCapacity) - VaultCrypto.OVERHEAD_BYTES);
+    }
+
+    public static int chunkSize(int encryptedBytes, int count, int slot) {
+        return (slot + 1) * encryptedBytes / count - slot * encryptedBytes / count;
+    }
 
     public static List<Part> create(String text, char[] password, int count)
             throws GeneralSecurityException {
@@ -36,10 +72,11 @@ public final class VaultParts {
             throw new IllegalArgumentException("Vault too large");
         }
         List<Part> parts = new ArrayList<>(count);
+        int start = 0;
         for (int index = 0; index < count; index++) {
-            int start = index * encrypted.length / count;
-            int end = (index + 1) * encrypted.length / count;
+            int end = start + chunkSize(encrypted.length, count, index);
             parts.add(new Part(id, index + 1, count, Arrays.copyOfRange(encrypted, start, end)));
+            start = end;
         }
         return Collections.unmodifiableList(parts);
     }
@@ -106,12 +143,12 @@ public final class VaultParts {
         }
 
         public byte[] encode() {
-            return ByteBuffer.allocate(HEADER_BYTES + chunk.length)
+            return ByteBuffer.allocate(PART_HEADER_BYTES + chunk.length)
                     .put(context(id, count).array()).put((byte) number).put(chunk).array();
         }
 
         public static Part parse(byte[] encoded) {
-            if (encoded.length <= HEADER_BYTES || encoded.length > HEADER_BYTES + MAX_BYTES) {
+            if (encoded.length <= PART_HEADER_BYTES || encoded.length > PART_HEADER_BYTES + MAX_BYTES) {
                 throw new IllegalArgumentException("Invalid part size");
             }
             ByteBuffer bytes = ByteBuffer.wrap(encoded);

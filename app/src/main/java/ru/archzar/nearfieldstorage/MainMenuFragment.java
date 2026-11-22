@@ -23,6 +23,7 @@ public class MainMenuFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle state) {
         MainActivity activity = (MainActivity) requireActivity();
+        binding.appVersion.setText(getString(R.string.app_version, BuildConfig.VERSION_NAME));
         binding.banner.setOnClickListener(ignored -> activity.tapBanner());
         binding.saveAndRewrite.setOnClickListener(ignored -> activity.newVault());
         binding.info.setOnClickListener(ignored -> activity.showHelp());

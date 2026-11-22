@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">NFS</string>
+    <string name="app_version" translatable="false">Near Field Storage, ver: %1$s</string>
     <string name="nfc_prompt">Приложите\nNFC-метку</string>
     <string name="read_nfc_hint">Для чтения зашифрованной информации</string>
     <string name="help_title">О приложении NFS</string>
@@ -24,7 +25,6 @@
     <string name="bad_tag">Данные метки повреждены или имеют неизвестный формат</string>
     <string name="tag_read_only">Метка доступна только для чтения</string>
     <string name="original_read_only">Исходная метка №%1$d доступна только для чтения</string>
-    <string name="tag_too_small">Метка №%1$d: нужно %2$d байт, доступно %3$d.</string>
     <string name="tag_lost">Связь с меткой потеряна. Приложите её ещё раз.</string>
     <string name="nfc_retry">Ошибка NFC. Уберите метку и приложите её снова.</string>
     <string name="verify_failed">Запись не удалось подтвердить. Приложите эту же метку снова.</string>

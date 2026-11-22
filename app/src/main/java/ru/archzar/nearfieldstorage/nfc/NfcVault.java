@@ -16,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
@@ -24,8 +25,24 @@ import ru.archzar.nearfieldstorage.utilities.VaultParts;
 
 public final class NfcVault {
     private static final String MIME_TYPE = "application/vnd.archzar.nfs";
+    private static final int MAX_SHORT_PAYLOAD = 255;
+    private static final int SHORT_NDEF_OVERHEAD = mimeMessage(new byte[0]).getByteArrayLength();
+    private static final int LONG_NDEF_OVERHEAD =
+            mimeMessage(new byte[MAX_SHORT_PAYLOAD + 1]).getByteArrayLength()
+                    - MAX_SHORT_PAYLOAD - 1;
 
     private NfcVault() {}
+
+    private static NdefMessage mimeMessage(byte[] payload) {
+        return new NdefMessage(NdefRecord.createMime(MIME_TYPE, payload));
+    }
+
+    static int maxChunkBytes(int capacity) {
+        int longPayload = capacity - LONG_NDEF_OVERHEAD;
+        int payload = longPayload > MAX_SHORT_PAYLOAD
+                ? longPayload : Math.min(MAX_SHORT_PAYLOAD, capacity - SHORT_NDEF_OVERHEAD);
+        return Math.max(0, Math.min(VaultParts.MAX_BYTES, payload - VaultParts.PART_HEADER_BYTES));
+    }
 
     public static Snapshot read(Tag tag) throws IOException, FormatException, Problem {
         try (Ndef ndef = requireNdef(tag)) {
@@ -149,52 +166,72 @@ public final class NfcVault {
         public boolean sameTag(Snapshot other) {
             return Arrays.equals(id, other.id);
         }
+
+        public int chunkCapacity() {
+            return maxChunkBytes(capacity);
+        }
+
+        public int freeChunkBytes() {
+            return Math.max(0, chunkCapacity() - (payload.length - VaultParts.PART_HEADER_BYTES));
+        }
+
+        public boolean isWritable() {
+            return writable;
+        }
     }
 
     public static final class WriteSession {
-        private static final int CHECKPOINT_VERSION = 1;
+        private static final int CHECKPOINT_VERSION = 2;
         private static final int MAX_ID_BYTES = 64;
         private static final int MAX_RECORD_BYTES = VaultParts.MAX_BYTES + 128;
 
         private final AtomicFile checkpoint;
         private final List<Snapshot> original;
         private final List<NdefMessage> messages;
+        private final int encryptedBytes;
         private final Problem writeProblem;
         private final List<byte[]> writtenIds = new ArrayList<>();
+        private volatile List<byte[]> checkedBlankIds = Collections.emptyList();
+        private volatile Problem capacityProblem;
         private byte[] attemptedId;
         private volatile int completed;
         private volatile boolean started;
         private volatile boolean writing;
 
         public WriteSession(File file, List<VaultParts.Part> parts, List<Snapshot> original) {
-            checkpoint = new AtomicFile(file);
-            this.original = new ArrayList<>(original);
-            if (parts.size() < original.size()) {
-                throw new IllegalArgumentException("Missing replacement parts");
-            }
-            messages = new ArrayList<>(parts.size());
-            for (VaultParts.Part part : parts) {
-                messages.add(new NdefMessage(NdefRecord.createMime(MIME_TYPE, part.encode())));
-            }
-            writeProblem = validateOriginals();
+            this(new AtomicFile(file), makeMessages(parts), new ArrayList<>(original));
         }
 
         private WriteSession(AtomicFile checkpoint, List<NdefMessage> messages,
                              List<Snapshot> original) {
+            if (messages.size() < original.size()) {
+                throw new IllegalArgumentException("Missing replacement parts");
+            }
             this.checkpoint = checkpoint;
             this.messages = messages;
             this.original = original;
+            encryptedBytes = messages.stream().mapToInt(message ->
+                    message.getRecords()[0].getPayload().length - VaultParts.PART_HEADER_BYTES).sum();
             writeProblem = validateOriginals();
+        }
+
+        private static List<NdefMessage> makeMessages(List<VaultParts.Part> parts) {
+            List<NdefMessage> messages = new ArrayList<>(parts.size());
+            for (VaultParts.Part part : parts) {
+                messages.add(mimeMessage(part.encode()));
+            }
+            return messages;
         }
 
         private Problem validateOriginals() {
             for (int slot = 0; slot < original.size(); slot++) {
-                Snapshot old = original.get(slot);
-                if (!old.writable) {
+                if (!original.get(slot).writable) {
                     return new Problem(R.string.original_read_only, slot + 1);
                 }
+            }
+            for (int slot = 0; slot < original.size(); slot++) {
                 try {
-                    checkCapacity(slot + 1, messages.get(slot), old.capacity);
+                    checkCapacity(slot, original.get(slot).capacity);
                 } catch (Problem error) {
                     return error;
                 }
@@ -206,10 +243,15 @@ public final class NfcVault {
             return writeProblem;
         }
 
+        public Problem capacityProblem() {
+            return capacityProblem;
+        }
+
         public static WriteSession restore(File file) throws IOException {
             AtomicFile checkpoint = new AtomicFile(file);
             try (DataInputStream in = new DataInputStream(checkpoint.openRead())) {
-                if (in.readInt() != CHECKPOINT_VERSION) {
+                int version = in.readInt();
+                if (version != 1 && version != CHECKPOINT_VERSION) {
                     throw new IOException("Unsupported write checkpoint");
                 }
                 int count = in.readUnsignedByte();
@@ -234,6 +276,17 @@ public final class NfcVault {
                 }
                 if (in.readBoolean()) {
                     session.attemptedId = readBytes(in, MAX_ID_BYTES);
+                }
+                if (version >= 2) {
+                    int checked = in.readUnsignedByte();
+                    if (checked != 0 && checked != count - originalCount) {
+                        throw new IOException("Invalid capacity check count");
+                    }
+                    List<byte[]> checkedIds = new ArrayList<>(checked);
+                    for (int i = 0; i < checked; i++) {
+                        checkedIds.add(readBytes(in, MAX_ID_BYTES));
+                    }
+                    session.checkedBlankIds = checkedIds;
                 }
                 session.completed = completed;
                 session.started = true;
@@ -285,6 +338,10 @@ public final class NfcVault {
             out.writeBoolean(attempt != null);
             if (attempt != null) {
                 writeBytes(out, attempt);
+            }
+            out.writeByte(checkedBlankIds.size());
+            for (byte[] id : checkedBlankIds) {
+                writeBytes(out, id);
             }
             byte[] entry = bytes.toByteArray();
 
@@ -340,11 +397,25 @@ public final class NfcVault {
         }
 
         public int nextNumber() {
-            return slot(completed) + 1;
+            int checked = checkedBlankIds.size();
+            return (needsCapacityCheck(checked) ? original.size() + checked : slot(completed)) + 1;
         }
 
         public boolean nextIsOriginal() {
             return slot(completed) < original.size();
+        }
+
+        public boolean isCheckingCapacity() {
+            return needsCapacityCheck(checkedBlankIds.size());
+        }
+
+        public boolean hasCheckedBlankTags() {
+            return !checkedBlankIds.isEmpty();
+        }
+
+        private boolean needsCapacityCheck(int checked) {
+            int blanks = count() - original.size();
+            return !started && blanks > 1 && checked < blanks;
         }
 
         public synchronized void writeNext(Tag tag, BooleanSupplier active)
@@ -357,9 +428,45 @@ public final class NfcVault {
             }
             writing = true;
             try {
-                writePart(tag, slot(completed), active);
+                if (isCheckingCapacity()) {
+                    checkBlankTag(tag, active);
+                } else {
+                    writePart(tag, slot(completed), active);
+                }
+                capacityProblem = null;
+            } catch (Problem error) {
+                capacityProblem = error.isCapacityIssue() ? error : null;
+                if (capacityProblem != null && !started && !isCheckingCapacity()) {
+                    checkedBlankIds = Collections.emptyList();
+                }
+                throw error;
             } finally {
                 writing = false;
+            }
+        }
+
+        private void checkBlankTag(Tag tag, BooleanSupplier active)
+                throws IOException, FormatException, Problem {
+            int slot = original.size() + checkedBlankIds.size();
+            byte[] id = requireId(tag);
+            if (original.stream().anyMatch(existing -> Arrays.equals(existing.id, id))
+                    || checkedBlankIds.stream().anyMatch(existing -> Arrays.equals(existing, id))) {
+                throw new Problem(R.string.check_different_tag, slot + 1);
+            }
+            try (Ndef ndef = requireNdef(tag)) {
+                ndef.connect();
+                if (!isEmpty(ndef.getNdefMessage())) {
+                    throw new Problem(R.string.tag_changed);
+                }
+                if (!ndef.isWritable()) {
+                    throw new Problem(R.string.tag_read_only);
+                }
+                checkCapacity(slot, ndef.getMaxSize());
+                if (active.getAsBoolean()) {
+                    List<byte[]> checked = new ArrayList<>(checkedBlankIds);
+                    checked.add(id);
+                    checkedBlankIds = checked;
+                }
             }
         }
 
@@ -371,6 +478,8 @@ public final class NfcVault {
             if ((old != null && !Arrays.equals(old.id, id))
                     || (attemptedId != null && !retry)
                     || writtenIds.stream().anyMatch(previous -> Arrays.equals(previous, id))
+                    || (old == null && !checkedBlankIds.isEmpty()
+                            && !Arrays.equals(checkedBlankIds.get(slot - original.size()), id))
                     || (old == null && original.stream()
                             .anyMatch(previous -> Arrays.equals(previous.id, id)))) {
                 throw new Problem(R.string.wrong_write_tag, slot + 1);
@@ -402,7 +511,7 @@ public final class NfcVault {
                 if (!ndef.isWritable()) {
                     throw new Problem(R.string.tag_read_only);
                 }
-                checkCapacity(slot + 1, replacement, ndef.getMaxSize());
+                checkCapacity(slot, ndef.getMaxSize());
                 if (!active.getAsBoolean()) {
                     return;
                 }
@@ -433,13 +542,37 @@ public final class NfcVault {
             attemptedId = null;
             completed++;
         }
-    }
 
-    private static void checkCapacity(int number, NdefMessage message, int available)
-            throws Problem {
-        int required = message.getByteArrayLength();
-        if (required > available) {
-            throw new Problem(R.string.tag_too_small, number, required, available);
+        private void checkCapacity(int slot, int available) throws Problem {
+            if (messages.get(slot).getByteArrayLength() <= available) {
+                return;
+            }
+            int chunkCapacity = maxChunkBytes(available);
+            int count = minimumTags(slot, chunkCapacity);
+            int symbols = VaultParts.textCapacity(chunkCapacity);
+            if (count > VaultParts.MAX_PARTS) {
+                throw new Problem(R.string.tag_capacity_limit, slot + 1, symbols, symbols / 2,
+                        VaultParts.MAX_PARTS);
+            }
+            throw new Problem(R.string.tag_capacity_more, slot + 1, symbols, symbols / 2, count);
+        }
+
+        private int minimumTags(int measuredSlot, int measuredCapacity) {
+            for (int count = Math.max(1, original.size()); count <= VaultParts.MAX_PARTS; count++) {
+                boolean fits = true;
+                for (int slot = 0; slot < count; slot++) {
+                    int capacity = slot < original.size() && slot != measuredSlot
+                            ? original.get(slot).chunkCapacity() : measuredCapacity;
+                    if (VaultParts.chunkSize(encryptedBytes, count, slot) > capacity) {
+                        fits = false;
+                        break;
+                    }
+                }
+                if (fits) {
+                    return count;
+                }
+            }
+            return VaultParts.MAX_PARTS + 1;
         }
     }
 
@@ -450,6 +583,10 @@ public final class NfcVault {
         private Problem(int message, Object... arguments) {
             this.message = message;
             this.arguments = arguments;
+        }
+
+        public boolean isCapacityIssue() {
+            return message == R.string.tag_capacity_more || message == R.string.tag_capacity_limit;
         }
     }
 }

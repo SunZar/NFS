@@ -53,7 +53,7 @@
                 android:layout_height="0dp"
                 android:layout_margin="@dimen/workspace_gap"
                 app:layout_constraintTop_toBottomOf="@id/label"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/app_version"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
@@ -78,6 +78,20 @@
                 </LinearLayout>
 
             </ScrollView>
+
+            <TextView
+                android:id="@+id/app_version"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/workspace_gap"
+                android:layout_marginBottom="@dimen/workspace_gap"
+                android:gravity="center"
+                android:textColor="@color/content_secondary"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:text="Near Field Storage, ver: x.x.x" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

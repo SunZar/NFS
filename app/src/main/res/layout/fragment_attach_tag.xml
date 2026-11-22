@@ -75,6 +75,14 @@
                         style="@style/Widget.NFS.HeroHint"
                         tools:text="Держите до подтверждения" />
 
+                    <TextView
+                        android:id="@+id/capacity_error"
+                        style="@style/Widget.NFS.HeroHint"
+                        android:accessibilityLiveRegion="polite"
+                        android:textColor="@color/error"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
             </ScrollView>

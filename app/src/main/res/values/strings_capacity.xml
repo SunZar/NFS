@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="check_blank_capacity">Проверка пустой метки %1$d из %2$d\nСначала проверьте новые метки. Затем приложите их в том же порядке для записи.</string>
+    <string name="next_checked_blank">Проверенная метка %1$d из %2$d\nДержите до подтверждения записи</string>
+    <string name="check_different_tag">Метка уже учтена. Приложите другую пустую метку для позиции №%1$d.</string>
+    <string name="tag_capacity_more">Метка №%1$d слишком мала. На одной такой метке помещается до %2$d символов ASCII или %3$d русских букв. При таком объёме новых меток понадобится всего: %4$d.</string>
+    <string name="tag_capacity_limit">Метка №%1$d слишком мала. На одной такой метке помещается до %2$d символов ASCII или %3$d русских букв. Даже %4$d меток такого объёма недостаточно. Используйте метки большей ёмкости.</string>
+    <string name="adjust_tag_count">Замените метку или вернитесь в редактор и измените число меток.</string>
+    <string name="capacity_text_length">Символов в тексте: %1$d</string>
+    <string name="capacity_add_symbols">Можно добавить до %1$d символов ASCII, %2$d русских букв или %3$d любых символов.</string>
+    <string name="capacity_set_too_small">Для этого текста нужно больше меток или метки большей ёмкости.</string>
+    <string name="capacity_similar_tags">При том же объёме новых меток: %1$s</string>
+    <string name="capacity_read_only_set">В наборе есть метка только для чтения.</string>
+    <string name="capacity_details">Место по меткам</string>
+    <string name="capacity_details_note">При сохранении весь текст заново распределяется по набору меток.</string>
+    <string name="capacity_free_symbols">Свободно на метке: до %1$d символов ASCII, %2$d русских букв или %3$d любых символов.</string>
+    <string name="capacity_per_tag">Метка №%1$d\n%2$s</string>
+</resources>

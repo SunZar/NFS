@@ -3,6 +3,7 @@ package ru.archzar.nearfieldstorage;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,19 @@ public class EditAndChangeFragment extends Fragment {
         binding.title.setText(rewrite ? R.string.rewrite_title : R.string.new_title);
         binding.saveAndRewrite.setText(rewrite ? R.string.save_and_rewrite : R.string.prepare_write);
         binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
+        binding.codedInformationEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                updateCapacity(activity, text);
+            }
+
+            @Override
+            public void afterTextChanged(Editable text) {}
+        });
+        updateCapacity(activity, binding.codedInformationEditText.getText());
         binding.tagCount.setOnClickListener(ignored -> chooseCount(activity));
         binding.saveAndRewrite.setOnClickListener(ignored -> save(activity));
         binding.back.setOnClickListener(ignored -> activity.back());
@@ -63,9 +77,16 @@ public class EditAndChangeFragment extends Fragment {
             }
             activity.setTagCount(item.getItemId());
             binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
+            updateCapacity(activity, binding.codedInformationEditText.getText());
             return true;
         });
         menu.show();
+    }
+
+    private void updateCapacity(MainActivity activity, CharSequence text) {
+        CharSequence capacity = activity.editorCapacity(text);
+        binding.editorCapacity.setText(capacity);
+        binding.editorCapacity.setVisibility(TextUtils.isEmpty(capacity) ? View.GONE : View.VISIBLE);
     }
 
     private void save(MainActivity activity) {
@@ -117,10 +138,10 @@ public class EditAndChangeFragment extends Fragment {
             TextUtils.getChars(entry, 0, entry.length(), password, 0);
             input.decryptionKey.setText(null);
             binding.decryptionKeyEditText.setText(null);
+            dialog.dismiss();
             if (!activity.prepareWrite(text, password)) {
                 Arrays.fill(password, '\0');
             }
-            dialog.dismiss();
         });
     }
 
@@ -129,7 +150,8 @@ public class EditAndChangeFragment extends Fragment {
             binding.codedInformationEditText.setEnabled(!preparing);
             binding.decryptionKeyEditText.setEnabled(!preparing);
             binding.tagCount.setEnabled(!preparing);
-            binding.saveAndRewrite.setEnabled(!preparing);
+            CryptoActionProgress.update(binding.saveAndRewrite, binding.cryptoProgress,
+                    preparing, R.string.encrypting);
         }
     }
 

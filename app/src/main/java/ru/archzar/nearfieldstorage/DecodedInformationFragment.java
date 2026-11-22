@@ -37,6 +37,12 @@ public class DecodedInformationFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
         TextView text = binding.decodedText;
         text.setText(activity.unlockedText());
+        String capacity = activity.readCapacity();
+        binding.readCapacity.setVisibility(capacity.isEmpty() ? View.GONE : View.VISIBLE);
+        if (!capacity.isEmpty()) {
+            binding.readCapacity.setText(capacity + "\n" + getString(R.string.capacity_details));
+            binding.readCapacity.setOnClickListener(ignored -> activity.showTagCapacities());
+        }
         text.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {

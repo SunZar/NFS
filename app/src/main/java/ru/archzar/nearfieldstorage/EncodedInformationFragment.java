@@ -20,22 +20,23 @@ import ru.archzar.nearfieldstorage.databinding.DialogWindowEnterDecryptionKeyBin
 import ru.archzar.nearfieldstorage.databinding.FragmentEncodedInformationBinding;
 
 public class EncodedInformationFragment extends Fragment {
+    private FragmentEncodedInformationBinding binding;
     private AlertDialog unlockDialog;
-    private DialogWindowEnterDecryptionKeyBinding unlockInput;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle state) {
-        return FragmentEncodedInformationBinding.inflate(inflater, container, false).getRoot();
+        binding = FragmentEncodedInformationBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, Bundle state) {
-        FragmentEncodedInformationBinding binding = FragmentEncodedInformationBinding.bind(view);
         MainActivity activity = (MainActivity) requireActivity();
         binding.encodedText.setText(activity.encryptedPreview());
         binding.enterDecryptionKey.setOnClickListener(ignored -> askPassword(activity));
         binding.back.setOnClickListener(ignored -> activity.back());
         binding.menu.setOnClickListener(activity::showExportMenu);
+        setUnlocking(activity.isUnlocking());
     }
 
     @Override
@@ -45,27 +46,23 @@ public class EncodedInformationFragment extends Fragment {
     }
 
     void promptIfNeeded() {
-        MainActivity activity = (MainActivity) requireActivity();
-        if (isResumed() && unlockDialog == null && activity.shouldPromptForPassword()) {
-            askPassword(activity);
+        if (isResumed() && unlockDialog == null) {
+            MainActivity activity = (MainActivity) requireActivity();
+            if (activity.shouldPromptForPassword()) {
+                askPassword(activity);
+            }
         }
     }
 
-    void showUnlockError() {
-        if (unlockDialog == null) {
-            promptIfNeeded();
-            return;
-        }
-        MainActivity activity = (MainActivity) requireActivity();
-        int error = activity.takeUnlockError();
-        if (error != 0) {
-            setCheckingPassword(false);
-            unlockInput.passwordInput.setError(getString(error));
+    void setUnlocking(boolean unlocking) {
+        if (binding != null) {
+            CryptoActionProgress.update(binding.enterDecryptionKey, binding.cryptoProgress,
+                    unlocking, R.string.decrypting);
         }
     }
 
     private void askPassword(MainActivity activity) {
-        if (!activity.hasEncryptedData()) {
+        if (!activity.hasEncryptedData() || activity.isUnlocking()) {
             return;
         }
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
@@ -81,12 +78,10 @@ public class EncodedInformationFragment extends Fragment {
         if (!activity.showUnlockDialog(dialog, () -> {
             input.decryptionKey.setText(null);
             unlockDialog = null;
-            unlockInput = null;
         })) {
             return;
         }
         unlockDialog = dialog;
-        unlockInput = input;
         input.decryptionKey.requestFocus();
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
@@ -100,21 +95,17 @@ public class EncodedInformationFragment extends Fragment {
             input.decryptionKey.setText(null);
             if (!activity.unlock(password)) {
                 Arrays.fill(password, '\0');
-                return;
             }
-            setCheckingPassword(true);
         });
-        showUnlockError();
+        int error = activity.takeUnlockError();
+        if (error != 0) {
+            input.passwordInput.setError(getString(error));
+        }
     }
 
-    private void setCheckingPassword(boolean checking) {
-        unlockDialog.setCancelable(!checking);
-        unlockDialog.setCanceledOnTouchOutside(!checking);
-        unlockDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(!checking);
-        unlockDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(!checking);
-        unlockInput.decryptionKey.setEnabled(!checking);
-        if (!checking) {
-            unlockInput.decryptionKey.requestFocus();
-        }
+    @Override
+    public void onDestroyView() {
+        binding = null;
+        super.onDestroyView();
     }
 }

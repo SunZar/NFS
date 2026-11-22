@@ -39,6 +39,9 @@ public class AttachTagFragment extends Fragment {
             String hint = activity.writeHint();
             binding.attachHint.setText(hint);
             binding.attachHint.setVisibility(hint.isEmpty() ? View.GONE : View.VISIBLE);
+            String capacityError = activity.writeCapacityError();
+            binding.capacityError.setText(capacityError);
+            binding.capacityError.setVisibility(capacityError.isEmpty() ? View.GONE : View.VISIBLE);
         }
     }
 
