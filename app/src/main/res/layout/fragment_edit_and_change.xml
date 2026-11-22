@@ -92,7 +92,7 @@
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintStart_toStartOf="parent"/>
 
-                    <EditText
+                    <ru.archzar.nearfieldstorage.SensitiveEditText
                         android:id="@+id/coded_information_edit_text"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -101,7 +101,10 @@
                         android:layout_marginBottom="8dp"
                         android:paddingHorizontal="8dp"
                         android:paddingVertical="4dp"
-                        android:text="Телеграм:\n- телефон: 89123456789\n- пароль: 12345\n\nВКонтакте:\n- телефон: 89123456789\n- пароль: 12345"
+                        android:hint="@string/vault_text_hint"
+                        android:inputType="textMultiLine|textNoSuggestions"
+                        android:saveEnabled="false"
+                        android:imeOptions="flagNoPersonalizedLearning|flagNoExtractUi"
                         android:textSize="16sp"
                         android:textColor="@color/white"
                         android:gravity="top"
@@ -123,15 +126,22 @@
                         android:layout_height="2dp"
                         android:background="@color/white"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/plus"
+                        app:layout_constraintEnd_toStartOf="@id/tag_count"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"/>
 
-                    <ImageView
-                        android:id="@+id/plus"
+                    <TextView
+                        android:id="@+id/tag_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/round_add_32"
+                        android:background="?attr/selectableItemBackground"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:minHeight="48dp"
+                        android:gravity="center"
+                        android:paddingHorizontal="12dp"
+                        android:focusable="true"
+                        android:clickable="true"
                         android:layout_marginHorizontal="4dp"
                         app:layout_constraintStart_toEndOf="@id/left_line"
                         app:layout_constraintEnd_toStartOf="@id/right_line"
@@ -144,7 +154,7 @@
                         android:layout_height="2dp"
                         android:background="@color/white"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/plus"
+                        app:layout_constraintStart_toEndOf="@id/tag_count"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"/>
 
@@ -164,7 +174,7 @@
                         android:id="@+id/decryption_key_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ключ шифрования"
+                        android:text="@string/master_password"
                         android:singleLine="true"
                         android:textSize="16dp"
                         android:textAppearance="@style/TextAppearance.AppCompat.Title"
@@ -184,7 +194,10 @@
                         android:layout_marginBottom="8dp"
                         android:paddingHorizontal="8dp"
                         android:paddingVertical="4dp"
-                        android:text="Пароль12345"
+                        android:hint="@string/master_password"
+                        android:inputType="textPassword"
+                        android:saveEnabled="false"
+                        android:imeOptions="flagNoPersonalizedLearning|flagNoExtractUi"
                         android:textSize="16sp"
                         android:textColor="@color/white"
                         android:gravity="top"

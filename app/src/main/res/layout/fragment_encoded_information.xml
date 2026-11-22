@@ -66,7 +66,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/background_inner_floating_island_corners_4dp"
@@ -79,14 +79,15 @@
                     <TextView
                         android:id="@+id/encoded_text"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
+                        android:saveEnabled="false"
                         android:layout_marginHorizontal="8dp"
                         android:layout_marginVertical="4dp"
-                        android:text="fTYFD56Ft7fdC7D76DE5YTFugfuyf76r67FYFf57fuyFUYF676duytuytD7676fuyfd7676D776d76cytdot9P8908098UIgiuyfud7DE76DFD8uf87RT87FYUFduytuyfy8i8iGT987T7T876fr6yfdytdsyrYHHUJKJliokhnihIOHG7UF76td56sdrXRXYTD76tfd78fYFDT6D856DTYOFygvhiuygoiuygt87FGYFyfd76red56ed56D56DYTulokfvyg987T7Tftfdt7yDT76ED56ED56dytdtyofI0F87T80tg78fgytufytDYT5TDidcytfdcuoytFOYUF876FR876fytfdoufd7frd876rf876FR6FD76YD67fTYFD56Ft7fdC7D76DE5YTFugfuyf76r67FYFf57fuyFUYF676duytuytD7676fuyfd7676D776d76cytdot9P8908098UIgiuyfud7DE76DFD8uf87RT87FYUFduytuyfy8i8iGT987T7T876fr6yfdytdsyrYHHUJKJliokhnihIOHG7UF76td56sdrXRXYTD76tfd78fYFDT6D856DTYOFygvhiuygoiuygt87FGYFyfd76red56ed56D56DYTulokfvyg987T7Tftfdt7yDT76ED56ED56dytdtyofI0F87T80tg78fgytufytDYT5TDidcytfdcuoytFOYUF876FR876fytfdoufd7frd876rf876FR6FD76YD67"
+
                         android:textSize="16sp"
                         android:textColor="@color/white"/>
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                </ScrollView>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -110,7 +111,7 @@
             android:id="@+id/enter_decryption_key"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Ввести ключ дешифровки"
+            android:text="@string/enter_master_password"
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:textSize="18sp"
@@ -124,6 +125,7 @@
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_nfc"
+            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/round_add_24"
@@ -175,9 +177,21 @@
             android:layout_marginEnd="36dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/menu"
             app:layout_constraintStart_toEndOf="@id/back"
             android:layout_marginHorizontal="8dp"/>
+
+        <ImageButton
+            android:id="@+id/menu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/round_more_vert_24"
+            android:background="?android:attr/actionBarItemBackground"
+            android:contentDescription="@string/more_options"
+            app:tint="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

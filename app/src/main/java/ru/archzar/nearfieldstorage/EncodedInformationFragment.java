@@ -1,100 +1,74 @@
 package ru.archzar.nearfieldstorage;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import java.util.Arrays;
+
+import ru.archzar.nearfieldstorage.databinding.DialogWindowEnterDecryptionKeyBinding;
 import ru.archzar.nearfieldstorage.databinding.FragmentEncodedInformationBinding;
-import ru.archzar.nearfieldstorage.utilities.Constants;
-import ru.archzar.nearfieldstorage.utilities.PreferenceManager;
 
 public class EncodedInformationFragment extends Fragment {
-    FragmentEncodedInformationBinding binding;
-
-    private PreferenceManager preferenceManager;
-    private String encodedInformation;
-
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentEncodedInformationBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle state) {
+        return FragmentEncodedInformationBinding.inflate(inflater, container, false).getRoot();
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        preferenceManager = new PreferenceManager(getContext());
-        preferenceManager.putBoolean(Constants.KEY_IS_IN_MAIN_MENU, false);
+    public void onViewCreated(@NonNull View view, Bundle state) {
+        FragmentEncodedInformationBinding binding = FragmentEncodedInformationBinding.bind(view);
+        MainActivity activity = (MainActivity) requireActivity();
+        binding.encodedText.setText(activity.encryptedPreview());
+        binding.enterDecryptionKey.setOnClickListener(ignored -> askPassword(activity));
+        binding.back.setOnClickListener(ignored -> activity.back());
+        binding.menu.setOnClickListener(activity::showExportMenu);
+        view.post(() -> {
+            if (getView() == view && activity.hasEncryptedData()) {
+                askPassword(activity);
+            }
+        });
+    }
 
-        encodedInformation = preferenceManager.getString(Constants.KEY_ENCODED_INFORMATION);
-
-        if (encodedInformation != null) {
-            binding.encodedText.setText(encodedInformation);
+    private void askPassword(MainActivity activity) {
+        if (!activity.hasEncryptedData()) {
+            return;
         }
-
-        binding.enterDecryptionKey.setOnClickListener(view1 -> {
-            onClickEnterDecryptionKey();
+        DialogWindowEnterDecryptionKeyBinding input =
+                DialogWindowEnterDecryptionKeyBinding.inflate(getLayoutInflater());
+        AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.enter_master_password)
+                .setView(input.getRoot())
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.unlock, null)
+                .create();
+        if (!activity.showDialog(dialog)) {
+            return;
+        }
+        input.decryptionKey.requestFocus();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
+            Editable entry = input.decryptionKey.getText();
+            if (entry.length() == 0) {
+                input.decryptionKey.setError(getString(R.string.password_required));
+                return;
+            }
+            char[] password = new char[entry.length()];
+            TextUtils.getChars(entry, 0, entry.length(), password, 0);
+            if (activity.unlock(password)) {
+                entry.clear();
+                dialog.dismiss();
+            } else {
+                Arrays.fill(password, '\0');
+            }
         });
-        binding.addNfc.setOnClickListener(view1 -> {
-            onClickAddNFC();
-        });
-        binding.back.setOnClickListener(view1 -> {
-            onClickBack();
-        });
     }
-
-    private void onClickEnterDecryptionKey() {
-        enterDecryptionKey();
-    }
-
-    private void onClickAddNFC() {
-        Toast.makeText(getContext(), "Добавить очередную модульную NFC метку", Toast.LENGTH_SHORT).show();
-    }
-
-    private void onClickBack() {
-        preferenceManager.clear();
-        MainMenuFragment fragment = new MainMenuFragment();
-        getFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment, fragment)
-                .commit();
-    }
-
-    private void enterDecryptionKey() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        View view = this.getLayoutInflater().inflate(R.layout.dialog_window_enter_decryption_key, null);
-        EditText editDecryptionKey = view.findViewById(R.id.decryption_key);
-        builder.setView(view)
-                .setTitle("Введите ключ дешифровки")
-                .setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.cancel();
-                    }
-                })
-                .setPositiveButton("Применить", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        String decryptionKey = editDecryptionKey.getText().toString();
-                        preferenceManager.putString(Constants.KEY_DECRYPTION_KEY, decryptionKey);
-                        DecodedInformationFragment fragment = new DecodedInformationFragment();
-                        getFragmentManager()
-                                .beginTransaction()
-                                .replace(R.id.fragment, fragment)
-                                .commit();
-                    }
-                });
-        builder.show();
-    }
-
 }

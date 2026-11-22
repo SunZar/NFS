@@ -67,7 +67,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/background_inner_floating_island_corners_4dp"
@@ -77,18 +77,19 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent">
 
-                    <TextView
+                    <ru.archzar.nearfieldstorage.SensitiveTextView
                         android:id="@+id/decoded_text"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
+                        android:saveEnabled="false"
                         android:textIsSelectable="false"
                         android:layout_marginHorizontal="8dp"
                         android:layout_marginVertical="4dp"
-                        android:text="Телеграм:\n- телефон: 89123456789\n- пароль: 12345\n\nВКонтакте:\n- телефон: 89123456789\n- пароль: 12345"
+
                         android:textSize="16sp"
                         android:textColor="@color/white"/>
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                </ScrollView>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -112,7 +113,7 @@
             android:id="@+id/copy_mode"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Режим копирования"
+            android:text="@string/copy_mode"
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:textSize="18sp"
@@ -181,9 +182,21 @@
             android:layout_marginEnd="36dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/menu"
             app:layout_constraintStart_toEndOf="@id/back"
             android:layout_marginHorizontal="8dp"/>
+
+        <ImageButton
+            android:id="@+id/menu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/round_more_vert_24"
+            android:background="?android:attr/actionBarItemBackground"
+            android:contentDescription="@string/more_options"
+            app:tint="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

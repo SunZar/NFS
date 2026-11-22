@@ -89,7 +89,7 @@
                         android:id="@+id/attach_nfc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Приложите NFC\nдля чтения данных"
+                        android:text="@string/tap_to_read"
                         android:textAppearance="@style/TextAppearance.AppCompat.Title"
                         android:textColor="@color/white"
                         android:textSize="26sp"
@@ -150,6 +150,7 @@
         <ImageButton
             android:id="@+id/menu"
             android:src="@drawable/round_more_vert_24"
+            android:contentDescription="@string/more_options"
             android:background="?android:attr/actionBarItemBackground"
             android:clickable="true"
             android:focusable="true"
@@ -177,6 +178,7 @@
 
         <Switch
             android:id="@+id/switch_toggle"
+            android:visibility="invisible"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"

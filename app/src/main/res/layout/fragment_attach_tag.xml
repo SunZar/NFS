@@ -90,7 +90,7 @@
                         android:id="@+id/attach_nfc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Приложите NFC\nдля записи данных"
+                        android:text="@string/tap_to_write"
                         android:textAppearance="@style/TextAppearance.AppCompat.Title"
                         android:textColor="@color/white"
                         android:textSize="26sp"
