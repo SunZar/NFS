@@ -22,9 +22,7 @@ public class AttachTagFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle state) {
         MainActivity activity = (MainActivity) requireActivity();
-        binding.back.setOnClickListener(ignored -> activity.back());
         binding.banner.setOnClickListener(ignored -> activity.tapBanner());
-        binding.saveDump.setOnClickListener(ignored -> activity.exportPreparedWrite());
         refresh();
     }
 
@@ -32,10 +30,7 @@ public class AttachTagFragment extends Fragment {
         if (binding != null) {
             MainActivity activity = (MainActivity) requireActivity();
             boolean clearing = activity.isClearingTag();
-            binding.title.setText(clearing ? R.string.clear_title : R.string.write_title);
             binding.label.setText(clearing ? R.string.clear_tag : R.string.write_label);
-            binding.writeActions.setVisibility(clearing ? View.GONE : View.VISIBLE);
-            binding.saveDump.setEnabled(!activity.isExporting());
             String hint = activity.writeHint();
             binding.attachHint.setText(hint);
             binding.attachHint.setVisibility(hint.isEmpty() ? View.GONE : View.VISIBLE);

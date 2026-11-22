@@ -76,19 +76,16 @@ public class DecodedInformationFragment extends Fragment {
             public void onDestroyActionMode(ActionMode mode) {}
         });
         setCopyMode(activity.isCopyMode());
-        binding.copyMode.setOnClickListener(ignored -> {
-            boolean enabled = !text.isTextSelectable();
-            activity.setCopyMode(enabled);
-            setCopyMode(enabled);
-        });
-        binding.editAndChange.setOnClickListener(ignored -> activity.editVault());
-        binding.back.setOnClickListener(ignored -> activity.back());
-        binding.menu.setOnClickListener(activity::showExportMenu);
+    }
+
+    void toggleCopyMode() {
+        boolean enabled = !binding.decodedText.isTextSelectable();
+        ((MainActivity) requireActivity()).setCopyMode(enabled);
+        setCopyMode(enabled);
     }
 
     private void setCopyMode(boolean enabled) {
         binding.decodedText.setTextIsSelectable(enabled);
-        binding.copyMode.setText(enabled ? R.string.exit_copy_mode : R.string.copy_mode);
         if (!enabled) {
             if (copyPulse != null) {
                 copyPulse.cancel();

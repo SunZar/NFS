@@ -33,10 +33,6 @@ public class EncodedInformationFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle state) {
         MainActivity activity = (MainActivity) requireActivity();
         binding.encodedText.setText(activity.encryptedPreview());
-        binding.enterDecryptionKey.setOnClickListener(ignored -> askPassword(activity));
-        binding.back.setOnClickListener(ignored -> activity.back());
-        binding.menu.setOnClickListener(activity::showExportMenu);
-        setUnlocking(activity.isUnlocking());
     }
 
     @Override
@@ -54,14 +50,7 @@ public class EncodedInformationFragment extends Fragment {
         }
     }
 
-    void setUnlocking(boolean unlocking) {
-        if (binding != null) {
-            CryptoActionProgress.update(binding.enterDecryptionKey, binding.cryptoProgress,
-                    unlocking, R.string.decrypting);
-        }
-    }
-
-    private void askPassword(MainActivity activity) {
+    void askPassword(MainActivity activity) {
         if (!activity.hasEncryptedData() || activity.isUnlocking()) {
             return;
         }

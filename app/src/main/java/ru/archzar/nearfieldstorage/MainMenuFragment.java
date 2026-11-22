@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 
 import ru.archzar.nearfieldstorage.databinding.FragmentMainMenuBinding;
@@ -25,25 +24,6 @@ public class MainMenuFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
         binding.appVersion.setText(getString(R.string.app_version, BuildConfig.VERSION_NAME));
         binding.banner.setOnClickListener(ignored -> activity.tapBanner());
-        binding.saveAndRewrite.setOnClickListener(ignored -> activity.newVault());
-        binding.info.setOnClickListener(ignored -> activity.showHelp());
-        binding.menu.setOnClickListener(anchor -> {
-            PopupMenu menu = new PopupMenu(activity, anchor);
-            menu.getMenu().add(0, R.id.menu_open_dump, 0, R.string.dump_open);
-            menu.getMenu().add(0, R.id.menu_clear_tag, 1, R.string.clear_tag);
-            menu.getMenu().add(0, R.id.menu_animation_settings, 2, R.string.animation_settings);
-            menu.setOnMenuItemClickListener(item -> {
-                if (item.getItemId() == R.id.menu_open_dump) {
-                    activity.openDump();
-                } else if (item.getItemId() == R.id.menu_clear_tag) {
-                    activity.startClearTag();
-                } else {
-                    activity.showAnimationSettings();
-                }
-                return true;
-            });
-            menu.show();
-        });
         refresh();
     }
 

@@ -27,14 +27,6 @@
         <item name="android:textColor">@color/content_primary</item>
     </style>
 
-    <style name="Widget.NFS.Workspace" parent="">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">0dp</item>
-        <item name="android:layout_marginTop">@dimen/workspace_gap</item>
-        <item name="android:layout_marginBottom">@dimen/workspace_gap</item>
-        <item name="android:paddingHorizontal">@dimen/workspace_gap</item>
-    </style>
-
     <style name="Widget.NFS.WorkspaceHeading" parent="Widget.NFS.BlockHeading">
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginHorizontal">@dimen/workspace_heading_inset</item>

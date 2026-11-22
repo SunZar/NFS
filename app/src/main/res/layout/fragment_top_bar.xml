@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_floating_island_corners_12dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bar_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
+            android:id="@+id/left_action"
+            style="@style/Widget.NFS.ToolbarButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/Widget.NFS.ToolbarTitle"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
+            android:id="@+id/right_action"
+            style="@style/Widget.NFS.ToolbarButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

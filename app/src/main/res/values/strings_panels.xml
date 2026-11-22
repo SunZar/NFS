@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="data_title">Данные</string>
+    <string name="write_data">Записать данные</string>
+    <string name="edit_and_save">Изменить и сохранить</string>
+</resources>

@@ -34,12 +34,9 @@ public class EditAndChangeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle state) {
         MainActivity activity = (MainActivity) requireActivity();
-        boolean rewrite = activity.hasOriginalTags();
         binding.codedInformationEditText.setText(activity.draft());
         TextInputErrors.clearOnEdit(binding.codedInformationInput);
         TextInputErrors.clearOnEdit(binding.masterPasswordInput);
-        binding.title.setText(rewrite ? R.string.rewrite_title : R.string.new_title);
-        binding.saveAndRewrite.setText(rewrite ? R.string.save_and_rewrite : R.string.prepare_write);
         binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
         binding.codedInformationEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -55,8 +52,6 @@ public class EditAndChangeFragment extends Fragment {
         });
         updateCapacity(activity, binding.codedInformationEditText.getText());
         binding.tagCount.setOnClickListener(ignored -> chooseCount(activity));
-        binding.saveAndRewrite.setOnClickListener(ignored -> save(activity));
-        binding.back.setOnClickListener(ignored -> activity.back());
         setPreparing(activity.isPreparingWrite());
     }
 
@@ -89,7 +84,7 @@ public class EditAndChangeFragment extends Fragment {
         binding.editorCapacity.setVisibility(TextUtils.isEmpty(capacity) ? View.GONE : View.VISIBLE);
     }
 
-    private void save(MainActivity activity) {
+    void save(MainActivity activity) {
         if (activity.isPreparingWrite()) {
             return;
         }
@@ -150,8 +145,6 @@ public class EditAndChangeFragment extends Fragment {
             binding.codedInformationEditText.setEnabled(!preparing);
             binding.decryptionKeyEditText.setEnabled(!preparing);
             binding.tagCount.setEnabled(!preparing);
-            CryptoActionProgress.update(binding.saveAndRewrite, binding.cryptoProgress,
-                    preparing, R.string.encrypting);
         }
     }
 

@@ -9,9 +9,45 @@
     android:importantForAutofill="noExcludeDescendants"
     android:id="@+id/coordinator">
 
+    <View
+        android:id="@+id/shadow_of_top_floating_island"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="-16dp"
+        android:background="@drawable/background_shadow_of_top_island_gradient"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/top_bar" />
+
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/workspace_gap"
+        android:layout_marginVertical="@dimen/workspace_gap"
+        app:layout_constraintTop_toBottomOf="@id/top_bar"
+        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/top_bar"
+        android:name="ru.archzar.nearfieldstorage.TopBarFragment"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/toolbar_size"
+        android:layout_margin="@dimen/workspace_gap"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/bottom_bar"
+        android:name="ru.archzar.nearfieldstorage.BottomBarFragment"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/workspace_gap"
+        android:layout_marginBottom="@dimen/workspace_gap"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

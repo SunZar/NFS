@@ -16,6 +16,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Gravity;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -37,7 +39,11 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.Fade;
+import androidx.transition.ChangeBounds;
+import androidx.transition.Slide;
 import androidx.transition.Transition;
+import androidx.transition.TransitionManager;
+import androidx.transition.TransitionSet;
 
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -63,7 +69,7 @@ import ru.archzar.nearfieldstorage.nfc.NfcVault;
 import ru.archzar.nearfieldstorage.utilities.VaultParts;
 
 public class MainActivity extends AppCompatActivity {
-    private enum Screen { HOME, ENCODED, DECODED, EDIT, WRITE, CLEAR }
+    enum Screen { HOME, ENCODED, DECODED, EDIT, WRITE, CLEAR }
     private enum NavigationMotion { FORWARD, BACKWARD, NFC_READ }
 
     private static final int NFC_FADE_MAX_MS = 120;
@@ -308,7 +314,141 @@ public class MainActivity extends AppCompatActivity {
         }
         fragments.beginTransaction().setReorderingAllowed(true)
                 .replace(R.id.fragment, fragment).commit();
+        long duration = active && screenChanged && ValueAnimator.areAnimatorsEnabled()
+                ? AnimationSettings.load(this).transitionMs : 0;
+        if (motion == NavigationMotion.NFC_READ) {
+            duration = Math.min(duration, NFC_FADE_MAX_MS);
+        }
+        renderPanels(duration);
         syncReader();
+    }
+
+    Screen currentScreen() {
+        return pending.screen;
+    }
+
+    int screenTitle() {
+        switch (pending.screen) {
+            case HOME: return R.string.app_name;
+            case EDIT: return hasOriginalTags() ? R.string.rewrite_title : R.string.new_title;
+            case WRITE: return R.string.write_title;
+            case CLEAR: return R.string.clear_title;
+            default: return R.string.data_title;
+        }
+    }
+
+    int primaryActionTitle() {
+        switch (pending.screen) {
+            case HOME: return R.string.write_data;
+            case EDIT: return hasOriginalTags() ? R.string.save_and_rewrite : R.string.prepare_write;
+            case ENCODED: return R.string.enter_master_password;
+            case DECODED: return isCopyMode() ? R.string.exit_copy_mode : R.string.copy_mode;
+            default: return R.string.dump_save;
+        }
+    }
+
+    private void renderPanels(long duration) {
+        TopBarFragment top = (TopBarFragment) getSupportFragmentManager().findFragmentById(R.id.top_bar);
+        BottomBarFragment bottom = bottomBar();
+        View bottomView = findViewById(R.id.bottom_bar);
+        int visibility = pending.screen == Screen.CLEAR ? View.GONE : View.VISIBLE;
+        boolean visibilityChanged = bottomView.getVisibility() != visibility;
+        ViewGroup container = findViewById(R.id.coordinator);
+        TransitionManager.endTransitions(container);
+        if (duration > 0 && container.isLaidOut() && visibilityChanged) {
+            TransitionSet motion = new TransitionSet()
+                    .addTransition(new ChangeBounds().addTarget(R.id.fragment))
+                    .addTransition(new Slide(Gravity.BOTTOM).addTarget(bottomView));
+            motion.setDuration(duration);
+            TransitionManager.beginDelayedTransition(container, motion);
+        }
+        bottomView.setVisibility(visibility);
+        if (top.getView() != null) {
+            top.render(duration);
+        }
+        if (bottom.getView() != null) {
+            bottom.render(visibilityChanged ? 0 : duration);
+        }
+    }
+
+    private BottomBarFragment bottomBar() {
+        return (BottomBarFragment) getSupportFragmentManager().findFragmentById(R.id.bottom_bar);
+    }
+
+    void refreshBottomBar() {
+        bottomBar().refresh();
+    }
+
+    void onTopLeftAction(View anchor) {
+        if (pending.screen == Screen.HOME) {
+            showMainMenu(anchor);
+        } else {
+            back();
+        }
+    }
+
+    void onTopRightAction(View anchor) {
+        if (pending.screen == Screen.HOME) {
+            showHelp();
+        } else if (pending.screen == Screen.ENCODED || pending.screen == Screen.DECODED) {
+            showExportMenu(anchor);
+        }
+    }
+
+    private void showMainMenu(View anchor) {
+        PopupMenu menu = new PopupMenu(this, anchor);
+        menu.getMenu().add(0, R.id.menu_open_dump, 0, R.string.dump_open);
+        menu.getMenu().add(0, R.id.menu_clear_tag, 1, R.string.clear_tag);
+        menu.getMenu().add(0, R.id.menu_animation_settings, 2, R.string.animation_settings);
+        menu.setOnMenuItemClickListener(item -> {
+            if (pending.screen != Screen.HOME) {
+                return false;
+            }
+            if (item.getItemId() == R.id.menu_open_dump) {
+                openDump();
+            } else if (item.getItemId() == R.id.menu_clear_tag) {
+                startClearTag();
+            } else {
+                showAnimationSettings();
+            }
+            return true;
+        });
+        menu.show();
+    }
+
+    void onPrimaryAction() {
+        Fragment workspace = getSupportFragmentManager().findFragmentById(R.id.fragment);
+        if (pending.cryptBusy || workspace == null || !workspace.isResumed()) {
+            return;
+        }
+        switch (pending.screen) {
+            case HOME: newVault(); break;
+            case EDIT:
+                if (workspace instanceof EditAndChangeFragment) {
+                    ((EditAndChangeFragment) workspace).save(this);
+                }
+                break;
+            case ENCODED:
+                if (workspace instanceof EncodedInformationFragment) {
+                    ((EncodedInformationFragment) workspace).askPassword(this);
+                }
+                break;
+            case DECODED:
+                if (workspace instanceof DecodedInformationFragment) {
+                    ((DecodedInformationFragment) workspace).toggleCopyMode();
+                }
+                break;
+            case WRITE: exportPreparedWrite(); break;
+            default: break;
+        }
+    }
+
+    void onSecondaryAction() {
+        Fragment workspace = getSupportFragmentManager().findFragmentById(R.id.fragment);
+        if (pending.screen == Screen.DECODED && workspace instanceof DecodedInformationFragment
+                && workspace.isResumed()) {
+            editVault();
+        }
     }
 
     private void configureTransition(Fragment previous, Fragment next, NavigationMotion motion) {
@@ -591,6 +731,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (current instanceof AttachTagFragment) {
             ((AttachTagFragment) current).refresh();
         }
+        refreshBottomBar();
     }
 
     void showHelp() {
@@ -1096,6 +1237,7 @@ public class MainActivity extends AppCompatActivity {
 
     void setCopyMode(boolean copyMode) {
         pending.copyMode = copyMode;
+        refreshBottomBar();
     }
 
     boolean isUnlocking() {
@@ -1103,10 +1245,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateUnlocking() {
+        refreshBottomBar();
         Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment);
         if (current instanceof EncodedInformationFragment) {
             EncodedInformationFragment encoded = (EncodedInformationFragment) current;
-            encoded.setUnlocking(isUnlocking());
             encoded.promptIfNeeded();
         }
     }
@@ -1116,6 +1258,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateEditorPreparing() {
+        refreshBottomBar();
         Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment);
         if (current instanceof EditAndChangeFragment) {
             ((EditAndChangeFragment) current).setPreparing(isPreparingWrite());
