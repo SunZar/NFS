@@ -12,19 +12,15 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/decryption_key"
+            style="@style/Widget.NFS.TextPanelInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@null"
             android:hint="@string/master_password"
             android:imeOptions="actionDone|flagNoPersonalizedLearning|flagNoExtractUi"
             android:importantForAutofill="no"
             android:inputType="textPassword"
             android:minHeight="52dp"
-            android:padding="12dp"
-            android:saveEnabled="false"
-            android:singleLine="false"
-            android:textColor="@color/content_primary"
-            android:textColorHint="@color/content_secondary" />
+            android:singleLine="false" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

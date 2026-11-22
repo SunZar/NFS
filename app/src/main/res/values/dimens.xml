@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="toolbar_size">48dp</dimen>
+    <dimen name="workspace_gap">8dp</dimen>
+    <dimen name="workspace_heading_inset">12dp</dimen>
+    <dimen name="text_panel_corner_radius">4dp</dimen>
+    <dimen name="text_panel_padding_horizontal">8dp</dimen>
+    <dimen name="text_panel_padding_vertical">4dp</dimen>
+</resources>

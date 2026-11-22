@@ -90,7 +90,7 @@ public class DecodedInformationFragment extends Fragment {
         float density = getResources().getDisplayMetrics().density;
         GradientDrawable outline = new GradientDrawable();
         outline.setColor(Color.TRANSPARENT);
-        outline.setCornerRadius(4 * density);
+        outline.setCornerRadius(getResources().getDimension(R.dimen.text_panel_corner_radius));
         outline.setStroke(Math.round(2 * density),
                 ContextCompat.getColor(requireContext(), R.color.accent));
         binding.copyArea.setForeground(outline);
@@ -100,14 +100,14 @@ public class DecodedInformationFragment extends Fragment {
         }
         outline.setAlpha(0);
         AccelerateDecelerateInterpolator ease = new AccelerateDecelerateInterpolator();
-        Keyframe peak = Keyframe.ofInt(0.62f, 255);
+        Keyframe peak = Keyframe.ofInt(0.38f, 255);
         peak.setInterpolator(ease);
-        Keyframe end = Keyframe.ofInt(1f, 0);
-        end.setInterpolator(ease);
+        Keyframe faded = Keyframe.ofInt(0.76f, 0);
+        faded.setInterpolator(ease);
         copyPulse = ValueAnimator.ofPropertyValuesHolder(PropertyValuesHolder.ofKeyframe(
-                "alpha", Keyframe.ofInt(0f, 0), Keyframe.ofInt(0.24f, 0), peak, end));
+                "alpha", Keyframe.ofInt(0f, 0), peak, faded, Keyframe.ofInt(1f, 0)));
         copyPulse.setInterpolator(new LinearInterpolator());
-        copyPulse.setDuration(2600);
+        copyPulse.setDuration(2080);
         copyPulse.setRepeatCount(ValueAnimator.INFINITE);
         copyPulse.addUpdateListener(animation -> outline.setAlpha((int) animation.getAnimatedValue()));
         copyPulse.start();

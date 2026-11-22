@@ -10,17 +10,23 @@
     <color name="on_accent">#172110</color>
     <color name="accent_surface">#33492A</color>
     <color name="on_accent_surface">#D9EACD</color>
-    <color name="action_fill">#42683D</color>
+    <color name="accent_inverse">#4C5E30</color>
+    <color name="action_fill">#8EB870</color>
     <color name="action_content">#FFFFFF</color>
+    <color name="action_text_shadow">#E61B2912</color>
     <color name="icon_hero">#FFFFFF</color>
+    <color name="text_selection">#808EB870</color>
     <color name="divider">#FFFFFF</color>
-    <color name="field_outline">#68716A</color>
-    <color name="field_outline_focused">#78827A</color>
-    <color name="field_outline_disabled">#414842</color>
+    <color name="field_outline">#565C54</color>
+    <color name="field_outline_focused">#636B60</color>
+    <color name="field_outline_disabled">#373C36</color>
     <color name="error">#FFB4B0</color>
     <color name="on_error">#571D22</color>
     <color name="error_surface">#742E34</color>
     <color name="on_error_surface">#FBDDDC</color>
     <color name="control_highlight">#30FFFFFF</color>
     <color name="island_shadow">#BF151515</color>
+    <color name="tag_count_background">#FFFFFF</color>
+    <color name="tag_count_text">#202624</color>
+    <color name="tag_count_highlight">#24202624</color>
 </resources>
