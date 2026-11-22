@@ -35,16 +35,19 @@ public class EditAndChangeFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
         boolean rewrite = activity.hasOriginalTags();
         binding.codedInformationEditText.setText(activity.draft());
-        binding.decryptionKey.setVisibility(activity.isEditingExisting() ? View.GONE : View.VISIBLE);
         binding.title.setText(rewrite ? R.string.rewrite_title : R.string.new_title);
         binding.saveAndRewrite.setText(rewrite ? R.string.save_and_rewrite : R.string.prepare_write);
         binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
         binding.tagCount.setOnClickListener(ignored -> chooseCount(activity));
         binding.saveAndRewrite.setOnClickListener(ignored -> save(activity));
         binding.back.setOnClickListener(ignored -> activity.back());
+        setPreparing(activity.isPreparingWrite());
     }
 
     private void chooseCount(MainActivity activity) {
+        if (activity.isPreparingWrite()) {
+            return;
+        }
         int minimum = activity.minimumTagCount();
         PopupMenu menu = new PopupMenu(activity, binding.tagCount);
         for (int count = minimum; count <= VaultParts.MAX_PARTS; count++) {
@@ -53,23 +56,23 @@ public class EditAndChangeFragment extends Fragment {
         }
         menu.getMenu().setGroupCheckable(0, true, true);
         menu.setOnMenuItemClickListener(item -> {
-            activity.setTagCount(item.getItemId());
-            if (binding != null) {
-                binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
+            if (binding == null || activity.isPreparingWrite()) {
+                return false;
             }
+            activity.setTagCount(item.getItemId());
+            binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
             return true;
         });
         menu.show();
     }
 
     private void save(MainActivity activity) {
-        if (activity.isEditingExisting()) {
-            activity.prepareWrite(binding.codedInformationEditText.getText().toString(), null);
+        if (activity.isPreparingWrite()) {
             return;
         }
         binding.codedInformationInput.setError(null);
         binding.masterPasswordInput.setError(null);
-        if (binding.codedInformationEditText.length() == 0) {
+        if (!activity.isEditingExisting() && binding.codedInformationEditText.length() == 0) {
             binding.codedInformationInput.setError(getString(R.string.text_required));
             binding.codedInformationEditText.requestFocus();
             return;
@@ -90,7 +93,12 @@ public class EditAndChangeFragment extends Fragment {
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(R.string.prepare_write, null)
                 .create();
-        if (!activity.showDialog(dialog)) {
+        if (!activity.showDialog(dialog, () -> {
+            input.decryptionKey.setText(null);
+            if (binding != null) {
+                binding.decryptionKeyEditText.setText(null);
+            }
+        })) {
             return;
         }
         input.decryptionKey.requestFocus();
@@ -101,21 +109,31 @@ public class EditAndChangeFragment extends Fragment {
                 input.passwordInput.setError(getString(R.string.password_mismatch));
                 return;
             }
+            String text = binding.codedInformationEditText.getText().toString();
             char[] password = new char[entry.length()];
             TextUtils.getChars(entry, 0, entry.length(), password, 0);
-            if (activity.prepareWrite(binding.codedInformationEditText.getText().toString(), password)) {
-                entry.clear();
-                dialog.dismiss();
-            } else {
+            input.decryptionKey.setText(null);
+            binding.decryptionKeyEditText.setText(null);
+            if (!activity.prepareWrite(text, password)) {
                 Arrays.fill(password, '\0');
             }
+            dialog.dismiss();
         });
+    }
+
+    void setPreparing(boolean preparing) {
+        if (binding != null) {
+            binding.codedInformationEditText.setEnabled(!preparing);
+            binding.decryptionKeyEditText.setEnabled(!preparing);
+            binding.tagCount.setEnabled(!preparing);
+            binding.saveAndRewrite.setEnabled(!preparing);
+        }
     }
 
     void clearFields() {
         if (binding != null) {
             binding.codedInformationEditText.getText().clear();
-            binding.decryptionKeyEditText.getText().clear();
+            binding.decryptionKeyEditText.setText(null);
         }
     }
 

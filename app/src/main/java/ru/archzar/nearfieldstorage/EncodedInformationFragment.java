@@ -53,7 +53,7 @@ public class EncodedInformationFragment extends Fragment {
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(R.string.unlock, null)
                 .create();
-        if (!activity.showDialog(dialog)) {
+        if (!activity.showDialog(dialog, () -> input.decryptionKey.setText(null))) {
             return;
         }
         input.decryptionKey.requestFocus();
@@ -66,12 +66,11 @@ public class EncodedInformationFragment extends Fragment {
             }
             char[] password = new char[entry.length()];
             TextUtils.getChars(entry, 0, entry.length(), password, 0);
-            if (activity.unlock(password)) {
-                entry.clear();
-                dialog.dismiss();
-            } else {
+            input.decryptionKey.setText(null);
+            if (!activity.unlock(password)) {
                 Arrays.fill(password, '\0');
             }
+            dialog.dismiss();
         });
     }
 }

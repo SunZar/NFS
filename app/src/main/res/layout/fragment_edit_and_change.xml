@@ -63,7 +63,7 @@
                         android:layout_height="wrap_content"
                         android:labelFor="@id/coded_information_edit_text"
                         android:text="Шифруемая информация"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                        style="@style/Widget.NFS.BlockHeading"
                         android:textColor="@color/accent"
                         android:textSize="16sp" />
 
@@ -72,19 +72,22 @@
                         style="@style/Widget.NFS.ValidationField"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="8dp"
+                        android:layout_weight="1">
 
+                        <!-- Keep the intrinsic height small so fillViewport can give the editor the remaining space. -->
                         <ru.archzar.nearfieldstorage.SensitiveEditText
                             android:id="@+id/coded_information_edit_text"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
                             android:background="@null"
                             android:gravity="top|start"
                             android:hint="@string/vault_text_hint"
                             android:imeOptions="flagNoPersonalizedLearning|flagNoExtractUi"
                             android:inputType="textMultiLine|textNoSuggestions"
-                            android:maxLines="14"
-                            android:minLines="8"
+                            android:maxHeight="108dp"
+                            android:minHeight="108dp"
                             android:padding="12dp"
                             android:saveEnabled="false"
                             android:textColor="@color/content_primary"
@@ -97,7 +100,7 @@
                         android:id="@+id/dividing_line"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginVertical="8dp"
+                        android:layout_marginVertical="4dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -109,19 +112,10 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/tag_count"
-                            style="@style/Widget.NFS.ActionButton"
+                            style="@style/Widget.NFS.TagCountButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginHorizontal="8dp"
-                            android:textColor="@color/tag_count_text"
-                            android:textSize="16sp"
-                            app:backgroundTint="@color/tag_count_background"
-                            app:cornerRadius="100dp"
-                            app:icon="@drawable/expand_more_24"
-                            app:iconGravity="textEnd"
-                            app:iconPadding="4dp"
-                            app:iconTint="@color/tag_count_text"
-                            app:rippleColor="@color/tag_count_highlight"
                             tools:text="Метки: 1" />
 
                         <View
@@ -144,7 +138,7 @@
                             android:layout_height="wrap_content"
                             android:labelFor="@id/decryption_key_edit_text"
                             android:text="@string/master_password"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                            style="@style/Widget.NFS.BlockHeading"
                             android:textColor="@color/accent"
                             android:textSize="16sp" />
 
@@ -214,8 +208,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_floating_island"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
+        android:layout_height="48dp"
         android:layout_margin="8dp"
         android:background="@drawable/background_floating_island_corners_12dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -229,23 +222,16 @@
             android:contentDescription="@string/back"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_margin="8dp" />
+            app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
             android:id="@+id/title"
+            style="@style/Widget.NFS.ToolbarTitle"
             android:text="Перезапись"
-            android:singleLine="true"
-            android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textColor="@color/content_primary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="36dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/back"
-            android:layout_marginHorizontal="8dp"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

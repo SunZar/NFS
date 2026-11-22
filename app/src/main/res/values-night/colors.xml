@@ -10,8 +10,13 @@
     <color name="on_accent">#172110</color>
     <color name="accent_surface">#33492A</color>
     <color name="on_accent_surface">#D9EACD</color>
+    <color name="action_fill">#42683D</color>
+    <color name="action_content">#FFFFFF</color>
     <color name="icon_hero">#FFFFFF</color>
     <color name="divider">#FFFFFF</color>
+    <color name="field_outline">#68716A</color>
+    <color name="field_outline_focused">#78827A</color>
+    <color name="field_outline_disabled">#414842</color>
     <color name="error">#FFB4B0</color>
     <color name="on_error">#571D22</color>
     <color name="error_surface">#742E34</color>

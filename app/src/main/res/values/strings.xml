@@ -45,7 +45,7 @@
     <string name="prepare_write">Перейти к записи</string>
     <string name="save_and_rewrite">Сохранить и перезаписать</string>
     <string name="copy_mode">Режим копирования</string>
-    <string name="exit_copy_mode">Выйти из режима копирования</string>
+    <string name="exit_copy_mode">Выйти из копирования</string>
     <string name="wait_for_write">Дождитесь проверки записи</string>
     <string name="cancel_write">Прервать запись</string>
     <string name="keep_writing">Продолжить запись</string>
@@ -54,7 +54,7 @@
     <string name="recovery_failed">Не удалось восстановить прерванную запись.</string>
     <string name="more_options">Дополнительные действия</string>
     <string name="dump_open">Открыть дамп</string>
-    <string name="dump_save">Сохранить дамп в TXT</string>
+    <string name="dump_save">Сохранить дамп в .TXT</string>
     <string name="dump_saved">Зашифрованный дамп сохранён</string>
     <string name="dump_invalid">Файл повреждён или не является дампом NFS</string>
     <string name="dump_open_failed">Не удалось прочитать файл дампа</string>
@@ -78,7 +78,7 @@
     <string name="tap_same_tag">Приложите ту же метку</string>
     <string name="tag_cleared">Метка очищена и готова к записи</string>
     <string name="wait_for_clear">Дождитесь завершения очистки</string>
-    <string name="master_password_hint">Пароль для шифрования записываемой информации</string>
+    <string name="master_password_hint">Пароль для шифрования</string>
     <string name="write_unavailable">Запись на метки недоступна</string>
     <string name="write_paused">Запись приостановлена</string>
     <string name="write_resume_hint">Нажмите, чтобы продолжить запись</string>

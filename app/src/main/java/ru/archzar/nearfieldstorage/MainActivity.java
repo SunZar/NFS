@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
             | NfcAdapter.FLAG_READER_NFC_V;
 
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final ExecutorService crypto = Executors.newSingleThreadExecutor();
     private final List<NfcVault.Snapshot> source = new ArrayList<>();
     private VaultParts.Assembly assembly = new VaultParts.Assembly();
     private volatile Scan scan;
@@ -94,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean stopped;
     private boolean cryptBusy;
     private int generation;
-    private char[] master;
     private String plaintext;
     private String draft = "";
     private int tagCount = 1;
@@ -234,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         worker.shutdown();
+        crypto.shutdown();
         super.onDestroy();
     }
 
@@ -676,36 +677,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean unlock(char[] password) {
-        if (!hasEncryptedData() || cryptBusy) {
+        if (!hasEncryptedData() || cryptBusy || password.length == 0) {
             return false;
         }
         cryptBusy = true;
         toast(R.string.decrypting);
         int operation = generation;
         VaultParts.Assembly reading = assembly;
-        worker.execute(() -> {
-            try {
-                String text = reading.decrypt(password);
-                runOnUiThread(() -> {
-                    if (generation == operation && !getSupportFragmentManager().isStateSaved()) {
-                        plaintext = text;
-                        master = password;
-                        cryptBusy = false;
-                        show(Screen.DECODED);
-                    } else {
+        try {
+            crypto.execute(() -> {
+                String text;
+                try {
+                    try {
+                        text = reading.decrypt(password);
+                    } finally {
                         Arrays.fill(password, '\0');
                     }
-                });
-            } catch (GeneralSecurityException error) {
-                Arrays.fill(password, '\0');
+                } catch (GeneralSecurityException error) {
+                    cryptError(operation, R.string.unlock_failed);
+                    return;
+                }
                 runOnUiThread(() -> {
                     if (generation == operation) {
                         cryptBusy = false;
-                        toast(R.string.unlock_failed);
+                        if (!getSupportFragmentManager().isStateSaved()) {
+                            plaintext = text;
+                            show(Screen.DECODED);
+                        }
                     }
                 });
-            }
-        });
+            });
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            cryptBusy = false;
+            return false;
+        }
         return true;
     }
 
@@ -723,7 +728,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void editVault() {
-        if (master != null) {
+        if (isEditingExisting()) {
             draft = plaintext;
             tagCount = assembly.count();
             show(Screen.EDIT);
@@ -731,7 +736,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean isEditingExisting() {
-        return master != null;
+        return plaintext != null;
     }
 
     boolean hasOriginalTags() {
@@ -754,64 +759,96 @@ public class MainActivity extends AppCompatActivity {
         return draft;
     }
 
-    boolean prepareWrite(String text, char[] newPassword) {
-        if (screen != Screen.EDIT || cryptBusy) {
-            return false;
-        }
-        char[] password = master == null ? newPassword : master.clone();
-        if (password == null) {
+    boolean prepareWrite(String text, char[] password) {
+        if (screen != Screen.EDIT || cryptBusy || password.length == 0) {
             return false;
         }
         draft = text;
         cryptBusy = true;
+        updateEditorPreparing();
         toast(R.string.encrypting);
         int operation = generation;
         int count = tagCount;
         File checkpoint = checkpointFile();
         List<NfcVault.Snapshot> originals = new ArrayList<>(source);
-        worker.execute(() -> {
-            try {
-                List<VaultParts.Part> parts = VaultParts.create(text, password, count);
-                NfcVault.WriteSession session = new NfcVault.WriteSession(checkpoint, parts, originals);
+        try {
+            crypto.execute(() -> {
+                NfcVault.WriteSession session;
+                try {
+                    List<VaultParts.Part> parts;
+                    try {
+                        parts = VaultParts.create(text, password, count);
+                    } finally {
+                        Arrays.fill(password, '\0');
+                    }
+                    session = new NfcVault.WriteSession(checkpoint, parts, originals);
+                } catch (IllegalArgumentException error) {
+                    cryptError(operation, R.string.vault_too_large);
+                    return;
+                } catch (GeneralSecurityException error) {
+                    cryptError(operation, R.string.encrypt_failed);
+                    return;
+                }
                 runOnUiThread(() -> {
-                    if (generation == operation && !getSupportFragmentManager().isStateSaved()) {
+                    if (generation == operation) {
                         cryptBusy = false;
-                        pending.session = session;
-                        pending.writePaused = false;
-                        WindowInsetsControllerCompat insets =
-                                ViewCompat.getWindowInsetsController(findViewById(R.id.coordinator));
-                        if (insets != null) {
-                            insets.hide(WindowInsetsCompat.Type.ime());
+                        if (!getSupportFragmentManager().isStateSaved()) {
+                            pending.session = session;
+                            pending.writePaused = false;
+                            WindowInsetsControllerCompat insets =
+                                    ViewCompat.getWindowInsetsController(findViewById(R.id.coordinator));
+                            if (insets != null) {
+                                insets.hide(WindowInsetsCompat.Type.ime());
+                            }
+                            show(Screen.WRITE);
+                        } else {
+                            updateEditorPreparing();
                         }
-                        show(Screen.WRITE);
                     }
                 });
-            } catch (IllegalArgumentException error) {
-                prepareError(operation, R.string.vault_too_large);
-            } catch (GeneralSecurityException error) {
-                prepareError(operation, R.string.encrypt_failed);
-            } finally {
-                Arrays.fill(password, '\0');
-            }
-        });
+            });
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            cryptBusy = false;
+            updateEditorPreparing();
+            return false;
+        }
         return true;
     }
 
-    private void prepareError(int operation, int message, Object... args) {
+    private void cryptError(int operation, int message) {
         runOnUiThread(() -> {
             if (generation == operation) {
                 cryptBusy = false;
-                toast(message, args);
+                updateEditorPreparing();
+                toast(message);
             }
         });
     }
 
+    boolean isPreparingWrite() {
+        return screen == Screen.EDIT && cryptBusy;
+    }
+
+    private void updateEditorPreparing() {
+        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment);
+        if (current instanceof EditAndChangeFragment) {
+            ((EditAndChangeFragment) current).setPreparing(isPreparingWrite());
+        }
+    }
+
     boolean showDialog(AlertDialog next) {
+        return showDialog(next, null);
+    }
+
+    boolean showDialog(AlertDialog next, Runnable onDismiss) {
         if (dialog != null || cryptBusy || !active) {
             return false;
         }
         dialog = next;
         dialog.setOnDismissListener(ignored -> {
+            if (onDismiss != null) {
+                onDismiss.run();
+            }
             dialog = null;
             syncReader();
         });
@@ -834,7 +871,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case EDIT:
-                if (master != null) {
+                if (isEditingExisting()) {
                     draft = "";
                     show(Screen.DECODED);
                 } else {
@@ -851,7 +888,7 @@ public class MainActivity extends AppCompatActivity {
                             .setNegativeButton(R.string.keep_writing, null)
                             .setPositiveButton(R.string.cancel_write, (ignored, which) -> home())
                             .create());
-                } else if (stopped || draft.isEmpty()) {
+                } else if (stopped || (draft.isEmpty() && !isEditingExisting())) {
                     home();
                 } else {
                     pending.session = null;
@@ -887,10 +924,6 @@ public class MainActivity extends AppCompatActivity {
     private void clearUnlocked() {
         generation++;
         cryptBusy = false;
-        if (master != null) {
-            Arrays.fill(master, '\0');
-            master = null;
-        }
         plaintext = null;
         draft = "";
         tagCount = 1;
