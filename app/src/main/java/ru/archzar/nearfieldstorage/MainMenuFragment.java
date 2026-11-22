@@ -30,11 +30,14 @@ public class MainMenuFragment extends Fragment {
             PopupMenu menu = new PopupMenu(activity, anchor);
             menu.getMenu().add(0, R.id.menu_open_dump, 0, R.string.dump_open);
             menu.getMenu().add(0, R.id.menu_clear_tag, 1, R.string.clear_tag);
+            menu.getMenu().add(0, R.id.menu_animation_settings, 2, R.string.animation_settings);
             menu.setOnMenuItemClickListener(item -> {
                 if (item.getItemId() == R.id.menu_open_dump) {
                     activity.openDump();
-                } else {
+                } else if (item.getItemId() == R.id.menu_clear_tag) {
                     activity.startClearTag();
+                } else {
+                    activity.showAnimationSettings();
                 }
                 return true;
             });

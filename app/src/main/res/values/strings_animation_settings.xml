@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="animation_settings">Настройки</string>
+    <string name="animation_settings_transition">Переход между экранами</string>
+    <string name="animation_settings_transition_duration">Длительность, мс</string>
+    <string name="animation_settings_transition_hint">0 — мгновенная смена экрана.</string>
+    <string name="animation_settings_transition_axis">Приближение при открытии</string>
+    <string name="animation_settings_transition_fade">Плавное затухание</string>
+    <string name="animation_settings_nfc_hint">После чтения NFC экран меняется с коротким затуханием, если анимация включена.</string>
+    <string name="animation_settings_copy">Зелёная рамка при копировании</string>
+    <string name="animation_settings_pulse_duration">Длительность цикла, мс</string>
+    <string name="animation_settings_pulse_hint">0 — рамка светится постоянно.</string>
+    <string name="animation_settings_pulse_pause">Пауза в цикле, мс</string>
+    <string name="animation_settings_pause_hint">Часть цикла, когда рамка скрыта.</string>
+    <string name="animation_settings_reset">Сбросить</string>
+    <string name="animation_settings_cancel">Отмена</string>
+    <string name="animation_settings_save">Сохранить</string>
+    <string name="animation_settings_transition_range">Введите число от 0 до %1$d.</string>
+    <string name="animation_settings_pulse_range">Введите 0 или число от %1$d до %2$d.</string>
+    <string name="animation_settings_pause_range">Введите число от 0 до %1$d.</string>
+    <string name="animation_settings_pause_zero">Для этой длительности укажите 0.</string>
+</resources>

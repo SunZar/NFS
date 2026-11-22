@@ -1,5 +1,6 @@
 package ru.archzar.nearfieldstorage;
 
+import android.animation.ValueAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -31,12 +32,16 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.transition.Fade;
+import androidx.transition.Transition;
 
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.transition.MaterialSharedAxis;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,6 +64,9 @@ import ru.archzar.nearfieldstorage.utilities.VaultParts;
 
 public class MainActivity extends AppCompatActivity {
     private enum Screen { HOME, ENCODED, DECODED, EDIT, WRITE, CLEAR }
+    private enum NavigationMotion { FORWARD, BACKWARD, NFC_READ }
+
+    private static final int NFC_FADE_MAX_MS = 120;
 
     public static final class PendingOperations extends ViewModel {
         // The active vault stays in memory across Activity recreation.
@@ -73,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
         private boolean copyMode;
         private boolean helpOpen;
         private boolean promptForPassword;
+        private int unlockError;
         private boolean cryptBusy;
         private int generation;
         private NfcVault.WriteSession session;
@@ -263,8 +272,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void show(Screen target) {
-        if (target != pending.screen) {
+        show(target, NavigationMotion.FORWARD);
+    }
+
+    private void show(Screen target, NavigationMotion motion) {
+        boolean screenChanged = target != pending.screen;
+        if (screenChanged) {
             pending.promptForPassword = target == Screen.ENCODED;
+            pending.unlockError = 0;
         }
         pending.screen = target;
         if (target != Screen.CLEAR) {
@@ -286,9 +301,37 @@ public class MainActivity extends AppCompatActivity {
             case CLEAR: fragment = new AttachTagFragment(); break;
             default: fragment = new MainMenuFragment(); break;
         }
-        getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
+        FragmentManager fragments = getSupportFragmentManager();
+        Fragment previous = fragments.findFragmentById(R.id.fragment);
+        if (active && screenChanged && previous != null && ValueAnimator.areAnimatorsEnabled()) {
+            configureTransition(previous, fragment, motion);
+        }
+        fragments.beginTransaction().setReorderingAllowed(true)
                 .replace(R.id.fragment, fragment).commit();
         syncReader();
+    }
+
+    private void configureTransition(Fragment previous, Fragment next, NavigationMotion motion) {
+        AnimationSettings settings = AnimationSettings.load(this);
+        int duration = settings.transitionMs;
+        if (duration == 0) {
+            return;
+        }
+        Transition enter;
+        Transition exit;
+        if (motion == NavigationMotion.NFC_READ || !settings.sharedAxis) {
+            enter = new Fade(Fade.IN);
+            exit = new Fade(Fade.OUT);
+        } else {
+            boolean forward = motion == NavigationMotion.FORWARD;
+            enter = new MaterialSharedAxis(MaterialSharedAxis.Z, forward);
+            exit = new MaterialSharedAxis(MaterialSharedAxis.Z, forward);
+        }
+        if (motion == NavigationMotion.NFC_READ) {
+            duration = Math.min(duration, NFC_FADE_MAX_MS);
+        }
+        next.setEnterTransition(enter.setDuration(duration));
+        previous.setExitTransition(exit.setDuration(duration));
     }
 
     private void syncReader() {
@@ -296,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
             scan = null;
             adapter.disableReaderMode(this);
         }
-        if (active && dialog == null && !pending.helpOpen && !pending.openingDump
+        if (active && dialog == null && !pending.helpOpen && !pending.openingDump && !areAnimationSettingsOpen()
                 && adapter != null && adapter.isEnabled()
                 && (pending.screen == Screen.HOME
                         || (pending.screen == Screen.WRITE && !isExporting() && !pending.writePaused
@@ -377,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
         }
         pending.source.add(snapshot);
         if (pending.assembly.isComplete()) {
-            show(Screen.ENCODED);
+            show(Screen.ENCODED, NavigationMotion.NFC_READ);
         } else {
             refreshScanScreen();
         }
@@ -548,6 +591,29 @@ public class MainActivity extends AppCompatActivity {
         })) {
             pending.helpOpen = true;
         }
+    }
+
+    void showAnimationSettings() {
+        FragmentManager fragments = getSupportFragmentManager();
+        if (!active || fragments.isStateSaved() || pending.screen != Screen.HOME
+                || pending.openingDump || dialog != null || areAnimationSettingsOpen()) {
+            return;
+        }
+        new AnimationSettingsDialog().showNow(fragments, AnimationSettingsDialog.TAG);
+        syncReader();
+    }
+
+    private boolean areAnimationSettingsOpen() {
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag(AnimationSettingsDialog.TAG);
+        if (!(fragment instanceof AnimationSettingsDialog)) {
+            return false;
+        }
+        android.app.Dialog settingsDialog = ((AnimationSettingsDialog) fragment).getDialog();
+        return settingsDialog != null && settingsDialog.isShowing();
+    }
+
+    void onAnimationSettingsDismissed() {
+        syncReader();
     }
 
     void openDump() {
@@ -738,6 +804,7 @@ public class MainActivity extends AppCompatActivity {
             clearPassword.run();
             if (active) {
                 pending.promptForPassword = false;
+                pending.unlockError = 0;
             }
         })) {
             pending.promptForPassword = true;
@@ -762,7 +829,6 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         pending.cryptBusy = true;
-        pending.promptForPassword = false;
         toast(R.string.decrypting);
         int operation = pending.generation;
         VaultParts.Assembly reading = pending.assembly;
@@ -788,6 +854,12 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    int takeUnlockError() {
+        int error = pending.unlockError;
+        pending.unlockError = 0;
+        return error;
     }
 
     String unlockedText() {
@@ -889,8 +961,16 @@ public class MainActivity extends AppCompatActivity {
         }
         pending.cryptBusy = false;
         if (result.error != 0) {
-            updateEditorPreparing();
-            toast(result.error);
+            if (pending.screen == Screen.ENCODED) {
+                pending.unlockError = result.error;
+                Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment);
+                if (fragment instanceof EncodedInformationFragment) {
+                    ((EncodedInformationFragment) fragment).showUnlockError();
+                }
+            } else {
+                updateEditorPreparing();
+                toast(result.error);
+            }
         } else if (result.session != null) {
             pending.session = result.session;
             pending.writePaused = false;
@@ -901,6 +981,9 @@ public class MainActivity extends AppCompatActivity {
             }
             show(Screen.WRITE);
         } else {
+            if (dialog != null) {
+                dialog.dismiss();
+            }
             pending.plaintext = result.plaintext;
             show(Screen.DECODED);
         }
@@ -930,7 +1013,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean showDialog(AlertDialog next, Runnable onDismiss) {
-        if (dialog != null || pending.cryptBusy || !active) {
+        if (dialog != null || pending.cryptBusy || !active || areAnimationSettingsOpen()) {
             return false;
         }
         dialog = next;
@@ -962,7 +1045,7 @@ public class MainActivity extends AppCompatActivity {
             case EDIT:
                 if (isEditingExisting()) {
                     pending.draft = "";
-                    show(Screen.DECODED);
+                    show(Screen.DECODED, NavigationMotion.BACKWARD);
                 } else {
                     home();
                 }
@@ -981,7 +1064,7 @@ public class MainActivity extends AppCompatActivity {
                     home();
                 } else {
                     pending.session = null;
-                    show(Screen.EDIT);
+                    show(Screen.EDIT, NavigationMotion.BACKWARD);
                 }
                 break;
             case CLEAR:
@@ -1003,7 +1086,7 @@ public class MainActivity extends AppCompatActivity {
         pending.session = null;
         pending.writePaused = false;
         clearUnlocked();
-        show(Screen.HOME);
+        show(Screen.HOME, NavigationMotion.BACKWARD);
     }
 
     private File checkpointFile() {

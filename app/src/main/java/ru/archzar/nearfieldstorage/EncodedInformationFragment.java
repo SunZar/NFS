@@ -20,6 +20,9 @@ import ru.archzar.nearfieldstorage.databinding.DialogWindowEnterDecryptionKeyBin
 import ru.archzar.nearfieldstorage.databinding.FragmentEncodedInformationBinding;
 
 public class EncodedInformationFragment extends Fragment {
+    private AlertDialog unlockDialog;
+    private DialogWindowEnterDecryptionKeyBinding unlockInput;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle state) {
         return FragmentEncodedInformationBinding.inflate(inflater, container, false).getRoot();
@@ -33,17 +36,31 @@ public class EncodedInformationFragment extends Fragment {
         binding.enterDecryptionKey.setOnClickListener(ignored -> askPassword(activity));
         binding.back.setOnClickListener(ignored -> activity.back());
         binding.menu.setOnClickListener(activity::showExportMenu);
-        view.post(() -> {
-            if (getView() == view) {
-                promptIfNeeded();
-            }
-        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        promptIfNeeded();
     }
 
     void promptIfNeeded() {
         MainActivity activity = (MainActivity) requireActivity();
-        if (activity.shouldPromptForPassword()) {
+        if (isResumed() && unlockDialog == null && activity.shouldPromptForPassword()) {
             askPassword(activity);
+        }
+    }
+
+    void showUnlockError() {
+        if (unlockDialog == null) {
+            promptIfNeeded();
+            return;
+        }
+        MainActivity activity = (MainActivity) requireActivity();
+        int error = activity.takeUnlockError();
+        if (error != 0) {
+            setCheckingPassword(false);
+            unlockInput.passwordInput.setError(getString(error));
         }
     }
 
@@ -54,15 +71,22 @@ public class EncodedInformationFragment extends Fragment {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
         DialogWindowEnterDecryptionKeyBinding input =
                 DialogWindowEnterDecryptionKeyBinding.inflate(LayoutInflater.from(builder.getContext()));
+        TextInputErrors.clearOnEdit(input.passwordInput);
         AlertDialog dialog = builder
                 .setTitle(R.string.enter_master_password)
                 .setView(input.getRoot())
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(R.string.unlock, null)
                 .create();
-        if (!activity.showUnlockDialog(dialog, () -> input.decryptionKey.setText(null))) {
+        if (!activity.showUnlockDialog(dialog, () -> {
+            input.decryptionKey.setText(null);
+            unlockDialog = null;
+            unlockInput = null;
+        })) {
             return;
         }
+        unlockDialog = dialog;
+        unlockInput = input;
         input.decryptionKey.requestFocus();
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
@@ -76,8 +100,21 @@ public class EncodedInformationFragment extends Fragment {
             input.decryptionKey.setText(null);
             if (!activity.unlock(password)) {
                 Arrays.fill(password, '\0');
+                return;
             }
-            dialog.dismiss();
+            setCheckingPassword(true);
         });
+        showUnlockError();
+    }
+
+    private void setCheckingPassword(boolean checking) {
+        unlockDialog.setCancelable(!checking);
+        unlockDialog.setCanceledOnTouchOutside(!checking);
+        unlockDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(!checking);
+        unlockDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(!checking);
+        unlockInput.decryptionKey.setEnabled(!checking);
+        if (!checking) {
+            unlockInput.decryptionKey.requestFocus();
+        }
     }
 }

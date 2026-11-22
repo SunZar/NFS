@@ -89,4 +89,5 @@
     <string name="exporting_dump">Сохранение дампа</string>
     <item type="id" name="menu_open_dump" />
     <item type="id" name="menu_clear_tag" />
+    <item type="id" name="menu_animation_settings" />
 </resources>

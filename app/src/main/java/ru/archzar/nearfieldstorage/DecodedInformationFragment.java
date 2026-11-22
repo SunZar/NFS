@@ -100,19 +100,24 @@ public class DecodedInformationFragment extends Fragment {
                 ContextCompat.getColor(requireContext(), R.color.accent));
         binding.copyArea.setForeground(outline);
 
-        if (!ValueAnimator.areAnimatorsEnabled()) {
+        AnimationSettings settings = AnimationSettings.load(requireContext());
+        if (settings.pulseMs == 0 || !ValueAnimator.areAnimatorsEnabled()) {
             return;
         }
         outline.setAlpha(0);
         AccelerateDecelerateInterpolator ease = new AccelerateDecelerateInterpolator();
-        Keyframe peak = Keyframe.ofInt(0.38f, 255);
+        float pulseEnd = 1f - (float) settings.pauseMs / settings.pulseMs;
+        Keyframe first = Keyframe.ofInt(0f, 0);
+        Keyframe peak = Keyframe.ofInt(pulseEnd / 2f, 255);
         peak.setInterpolator(ease);
-        Keyframe faded = Keyframe.ofInt(0.76f, 0);
+        Keyframe faded = Keyframe.ofInt(pulseEnd, 0);
         faded.setInterpolator(ease);
-        copyPulse = ValueAnimator.ofPropertyValuesHolder(PropertyValuesHolder.ofKeyframe(
-                "alpha", Keyframe.ofInt(0f, 0), peak, faded, Keyframe.ofInt(1f, 0)));
+        PropertyValuesHolder alpha = settings.pauseMs == 0
+                ? PropertyValuesHolder.ofKeyframe("alpha", first, peak, faded)
+                : PropertyValuesHolder.ofKeyframe("alpha", first, peak, faded, Keyframe.ofInt(1f, 0));
+        copyPulse = ValueAnimator.ofPropertyValuesHolder(alpha);
         copyPulse.setInterpolator(new LinearInterpolator());
-        copyPulse.setDuration(2080);
+        copyPulse.setDuration(settings.pulseMs);
         copyPulse.setRepeatCount(ValueAnimator.INFINITE);
         copyPulse.addUpdateListener(animation -> outline.setAlpha((int) animation.getAnimatedValue()));
         copyPulse.start();

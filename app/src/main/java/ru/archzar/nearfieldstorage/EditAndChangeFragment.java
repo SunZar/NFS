@@ -35,6 +35,8 @@ public class EditAndChangeFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
         boolean rewrite = activity.hasOriginalTags();
         binding.codedInformationEditText.setText(activity.draft());
+        TextInputErrors.clearOnEdit(binding.codedInformationInput);
+        TextInputErrors.clearOnEdit(binding.masterPasswordInput);
         binding.title.setText(rewrite ? R.string.rewrite_title : R.string.new_title);
         binding.saveAndRewrite.setText(rewrite ? R.string.save_and_rewrite : R.string.prepare_write);
         binding.tagCount.setText(getString(R.string.tag_count, activity.tagCount()));
@@ -86,6 +88,7 @@ public class EditAndChangeFragment extends Fragment {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
         DialogWindowEnterDecryptionKeyBinding input =
                 DialogWindowEnterDecryptionKeyBinding.inflate(LayoutInflater.from(builder.getContext()));
+        TextInputErrors.clearOnEdit(input.passwordInput);
         input.decryptionKey.setHint(getString(R.string.master_password_hint));
         AlertDialog dialog = builder
                 .setTitle(R.string.confirm_master_password)
@@ -136,6 +139,14 @@ public class EditAndChangeFragment extends Fragment {
         }
         binding.decryptionKeyEditText.setText(null);
         return binding.codedInformationEditText.getText().toString();
+    }
+
+    @Override
+    public void onStop() {
+        if (binding != null) {
+            binding.decryptionKeyEditText.setText(null);
+        }
+        super.onStop();
     }
 
     private void clearFields() {
