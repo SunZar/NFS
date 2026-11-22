@@ -25,6 +25,7 @@ public class MainMenuFragment extends Fragment {
         MainActivity activity = (MainActivity) requireActivity();
         binding.banner.setOnClickListener(ignored -> activity.tapBanner());
         binding.saveAndRewrite.setOnClickListener(ignored -> activity.newVault());
+        binding.info.setOnClickListener(ignored -> activity.showHelp());
         binding.menu.setOnClickListener(anchor -> {
             PopupMenu menu = new PopupMenu(activity, anchor);
             menu.getMenu().add(0, R.id.menu_open_dump, 0, R.string.dump_open);
@@ -44,7 +45,8 @@ public class MainMenuFragment extends Fragment {
 
     void refresh() {
         if (binding != null) {
-            binding.attachNfc.setText(((MainActivity) requireActivity()).readPrompt());
+            MainActivity activity = (MainActivity) requireActivity();
+            binding.attachHint.setText(activity.readHintText());
         }
     }
 

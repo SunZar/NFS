@@ -6,8 +6,8 @@ import android.view.MotionEvent;
 
 import androidx.appcompat.widget.AppCompatImageButton;
 
-public final class RoundToolbarButton extends AppCompatImageButton {
-    public RoundToolbarButton(Context context, AttributeSet attrs) {
+public final class RoundedToolbarButton extends AppCompatImageButton {
+    public RoundedToolbarButton(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
@@ -31,9 +31,15 @@ public final class RoundToolbarButton extends AppCompatImageButton {
     }
 
     private boolean containsTouch(MotionEvent event) {
-        float x = event.getX() - getWidth() * 0.5f;
-        float y = event.getY() - getHeight() * 0.5f;
-        float radius = Math.min(getWidth(), getHeight()) * 0.5f;
-        return x * x + y * y <= radius * radius;
+        float x = event.getX();
+        float y = event.getY();
+        if (x < 0 || y < 0 || x >= getWidth() || y >= getHeight()) {
+            return false;
+        }
+        float radius = Math.min(getResources().getDimension(R.dimen.toolbar_corner_radius),
+                Math.min(getWidth(), getHeight()) * 0.5f);
+        float cornerX = Math.max(0, Math.max(radius - x, x - (getWidth() - radius)));
+        float cornerY = Math.max(0, Math.max(radius - y, y - (getHeight() - radius)));
+        return cornerX * cornerX + cornerY * cornerY <= radius * radius;
     }
 }

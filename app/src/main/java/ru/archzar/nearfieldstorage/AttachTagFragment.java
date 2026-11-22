@@ -36,7 +36,6 @@ public class AttachTagFragment extends Fragment {
             binding.label.setText(clearing ? R.string.clear_tag : R.string.write_label);
             binding.writeActions.setVisibility(clearing ? View.GONE : View.VISIBLE);
             binding.saveDump.setEnabled(!activity.isExporting());
-            binding.attachNfc.setText(activity.writePrompt());
             String hint = activity.writeHint();
             binding.attachHint.setText(hint);
             binding.attachHint.setVisibility(hint.isEmpty() ? View.GONE : View.VISIBLE);

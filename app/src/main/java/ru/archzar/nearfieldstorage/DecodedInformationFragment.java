@@ -69,7 +69,12 @@ public class DecodedInformationFragment extends Fragment {
             @Override
             public void onDestroyActionMode(ActionMode mode) {}
         });
-        binding.copyMode.setOnClickListener(ignored -> setCopyMode(!text.isTextSelectable()));
+        setCopyMode(activity.isCopyMode());
+        binding.copyMode.setOnClickListener(ignored -> {
+            boolean enabled = !text.isTextSelectable();
+            activity.setCopyMode(enabled);
+            setCopyMode(enabled);
+        });
         binding.editAndChange.setOnClickListener(ignored -> activity.editVault());
         binding.back.setOnClickListener(ignored -> activity.back());
         binding.menu.setOnClickListener(activity::showExportMenu);
@@ -113,7 +118,23 @@ public class DecodedInformationFragment extends Fragment {
         copyPulse.start();
     }
 
-    void clearText() {
+    @Override
+    public void onPause() {
+        if (copyPulse != null) {
+            copyPulse.pause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (copyPulse != null) {
+            copyPulse.resume();
+        }
+    }
+
+    private void clearText() {
         if (binding != null) {
             setCopyMode(false);
             binding.decodedText.setText(null);

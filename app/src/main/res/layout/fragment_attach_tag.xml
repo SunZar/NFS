@@ -52,7 +52,6 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_margin="@dimen/workspace_gap"
-                android:fillViewport="true"
                 app:layout_constraintTop_toBottomOf="@id/label"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -60,38 +59,20 @@
 
                 <LinearLayout
                     android:id="@+id/banner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="12dp"
-                    android:orientation="vertical"
-                    android:gravity="center">
+                    style="@style/Widget.NFS.HeroBanner">
 
                     <ImageView
                         android:id="@+id/arrow"
-                        android:src="@drawable/round_arrow_upward_24"
-                        android:layout_width="160dp"
-                        android:layout_height="160dp"
-                        android:importantForAccessibility="no" />
+                        style="@style/Widget.NFS.HeroArrow" />
 
                     <TextView
                         android:id="@+id/attach_nfc"
                         style="@style/Widget.NFS.HeroPrompt"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="-16dp"
-                        android:breakStrategy="balanced"
-                        android:gravity="center"
-                        tools:text="Приложите пустую метку 1 из 3" />
+                        android:text="@string/nfc_prompt" />
 
                     <TextView
                         android:id="@+id/attach_hint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:breakStrategy="balanced"
-                        android:gravity="center"
-                        android:textColor="@color/content_secondary"
-                        android:textSize="16sp"
+                        style="@style/Widget.NFS.HeroHint"
                         tools:text="Держите до подтверждения" />
 
                 </LinearLayout>
@@ -163,7 +144,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ru.archzar.nearfieldstorage.RoundToolbarButton
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
             style="@style/Widget.NFS.ToolbarButton"
             android:id="@+id/back"
             android:src="@drawable/round_arrow_back_24"

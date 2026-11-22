@@ -52,45 +52,30 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_margin="@dimen/workspace_gap"
-                android:fillViewport="true"
                 app:layout_constraintTop_toBottomOf="@id/label"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                <LinearLayout
+                    android:id="@+id/banner"
+                    style="@style/Widget.NFS.HeroBanner">
 
-                    <LinearLayout
-                        android:id="@+id/banner"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:gravity="center"
-                        android:orientation="vertical">
+                    <ImageView
+                        android:id="@+id/arrow"
+                        style="@style/Widget.NFS.HeroArrow" />
 
-                        <ImageView
-                            android:id="@+id/arrow"
-                            android:layout_width="160dp"
-                            android:layout_height="160dp"
-                            android:importantForAccessibility="no"
-                            android:src="@drawable/round_arrow_upward_24" />
+                    <TextView
+                        android:id="@+id/attach_nfc"
+                        style="@style/Widget.NFS.HeroPrompt"
+                        android:text="@string/nfc_prompt" />
 
-                        <TextView
-                            android:id="@+id/attach_nfc"
-                            style="@style/Widget.NFS.HeroPrompt"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="-16dp"
-                            android:breakStrategy="balanced"
-                            android:gravity="center"
-                            android:text="@string/tap_to_read" />
+                    <TextView
+                        android:id="@+id/attach_hint"
+                        style="@style/Widget.NFS.HeroHint"
+                        android:text="@string/read_nfc_hint" />
 
-                    </LinearLayout>
-
-                </FrameLayout>
+                </LinearLayout>
 
             </ScrollView>
 
@@ -133,7 +118,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ru.archzar.nearfieldstorage.RoundToolbarButton
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
             style="@style/Widget.NFS.ToolbarButton"
             android:id="@+id/menu"
             android:src="@drawable/round_more_vert_24"
@@ -149,6 +134,15 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
+            style="@style/Widget.NFS.ToolbarButton"
+            android:id="@+id/info"
+            android:src="@drawable/round_info_outline_24"
+            android:contentDescription="@string/help_title"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

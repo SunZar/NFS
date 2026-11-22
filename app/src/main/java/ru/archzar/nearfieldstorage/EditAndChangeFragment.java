@@ -130,7 +130,15 @@ public class EditAndChangeFragment extends Fragment {
         }
     }
 
-    void clearFields() {
+    String takeDraftAndClearPassword() {
+        if (binding == null) {
+            return null;
+        }
+        binding.decryptionKeyEditText.setText(null);
+        return binding.codedInformationEditText.getText().toString();
+    }
+
+    private void clearFields() {
         if (binding != null) {
             binding.codedInformationEditText.getText().clear();
             binding.decryptionKeyEditText.setText(null);

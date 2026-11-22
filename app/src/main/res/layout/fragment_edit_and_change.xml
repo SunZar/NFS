@@ -198,7 +198,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ru.archzar.nearfieldstorage.RoundToolbarButton
+        <ru.archzar.nearfieldstorage.RoundedToolbarButton
             style="@style/Widget.NFS.ToolbarButton"
             android:id="@+id/back"
             android:src="@drawable/round_arrow_back_24"

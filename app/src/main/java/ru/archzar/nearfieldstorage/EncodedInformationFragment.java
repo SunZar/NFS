@@ -34,10 +34,17 @@ public class EncodedInformationFragment extends Fragment {
         binding.back.setOnClickListener(ignored -> activity.back());
         binding.menu.setOnClickListener(activity::showExportMenu);
         view.post(() -> {
-            if (getView() == view && activity.hasEncryptedData()) {
-                askPassword(activity);
+            if (getView() == view) {
+                promptIfNeeded();
             }
         });
+    }
+
+    void promptIfNeeded() {
+        MainActivity activity = (MainActivity) requireActivity();
+        if (activity.shouldPromptForPassword()) {
+            askPassword(activity);
+        }
     }
 
     private void askPassword(MainActivity activity) {
@@ -53,7 +60,7 @@ public class EncodedInformationFragment extends Fragment {
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(R.string.unlock, null)
                 .create();
-        if (!activity.showDialog(dialog, () -> input.decryptionKey.setText(null))) {
+        if (!activity.showUnlockDialog(dialog, () -> input.decryptionKey.setText(null))) {
             return;
         }
         input.decryptionKey.requestFocus();

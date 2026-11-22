@@ -43,10 +43,42 @@
         <item name="android:textSize">16sp</item>
     </style>
 
+    <style name="Widget.NFS.HeroBanner" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">top|center_horizontal</item>
+        <item name="android:paddingHorizontal">12dp</item>
+        <item name="android:paddingTop">24dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+
+    <style name="Widget.NFS.HeroArrow" parent="">
+        <item name="android:layout_width">160dp</item>
+        <item name="android:layout_height">160dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:src">@drawable/round_arrow_upward_24</item>
+    </style>
+
     <style name="Widget.NFS.HeroPrompt" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">-16dp</item>
+        <item name="android:breakStrategy">balanced</item>
+        <item name="android:gravity">center</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textColor">@color/content_primary</item>
         <item name="android:textSize">26sp</item>
+    </style>
+
+    <style name="Widget.NFS.HeroHint" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:breakStrategy">balanced</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/content_secondary</item>
+        <item name="android:textSize">16sp</item>
     </style>
 
     <style name="Widget.NFS.TextPanel" parent="">
@@ -98,9 +130,11 @@
 
     <style name="Widget.NFS.TagCountButton" parent="Widget.NFS.Button">
         <item name="android:minHeight">48dp</item>
-        <item name="android:insetTop">6dp</item>
-        <item name="android:insetBottom">6dp</item>
-        <item name="android:paddingHorizontal">10dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:insetTop">7dp</item>
+        <item name="android:insetBottom">7dp</item>
+        <item name="android:paddingStart">15dp</item>
+        <item name="android:paddingEnd">5dp</item>
         <item name="android:paddingVertical">4dp</item>
         <item name="android:textColor">@color/tag_count_text</item>
         <item name="android:textSize">16sp</item>
