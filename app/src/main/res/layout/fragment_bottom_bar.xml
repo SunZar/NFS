@@ -15,7 +15,7 @@
             android:id="@+id/or_divider"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/workspace_gap"
+            android:paddingBottom="@dimen/workspace_gap"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:visibility="gone">

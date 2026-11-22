@@ -80,6 +80,10 @@ public final class AnimationSettingsDialog extends DialogFragment {
         binding.pulsePause.setText(Integer.toString(values.pauseMs));
         binding.transitionStyle.check(values.sharedAxis
                 ? R.id.transition_style_axis : R.id.transition_style_fade);
+        binding.topBarStyle.check(values.topBarMotion == AnimationSettings.PanelMotion.BLINK
+                ? R.id.top_bar_style_blink : R.id.top_bar_style_fade);
+        binding.bottomBarStyle.check(values.bottomBarMotion == AnimationSettings.PanelMotion.BLINK
+                ? R.id.bottom_bar_style_blink : R.id.bottom_bar_style_fade);
     }
 
     private void save() {
@@ -113,7 +117,14 @@ public final class AnimationSettingsDialog extends DialogFragment {
         }
         boolean sharedAxis = binding.transitionStyle.getCheckedRadioButtonId()
                 == R.id.transition_style_axis;
-        new AnimationSettings(transition, pulse, pause, sharedAxis).save(requireContext());
+        AnimationSettings.PanelMotion topBarMotion = binding.topBarStyle.getCheckedRadioButtonId()
+                == R.id.top_bar_style_blink
+                ? AnimationSettings.PanelMotion.BLINK : AnimationSettings.PanelMotion.FADE;
+        AnimationSettings.PanelMotion bottomBarMotion =
+                binding.bottomBarStyle.getCheckedRadioButtonId() == R.id.bottom_bar_style_blink
+                        ? AnimationSettings.PanelMotion.BLINK : AnimationSettings.PanelMotion.FADE;
+        new AnimationSettings(transition, pulse, pause, sharedAxis, topBarMotion, bottomBarMotion)
+                .save(requireContext());
         dismiss();
     }
 

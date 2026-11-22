@@ -309,17 +309,18 @@ public class MainActivity extends AppCompatActivity {
         }
         FragmentManager fragments = getSupportFragmentManager();
         Fragment previous = fragments.findFragmentById(R.id.fragment);
-        if (active && screenChanged && previous != null && ValueAnimator.areAnimatorsEnabled()) {
-            configureTransition(previous, fragment, motion);
-        }
-        fragments.beginTransaction().setReorderingAllowed(true)
-                .replace(R.id.fragment, fragment).commit();
+        AnimationSettings settings = AnimationSettings.load(this);
         long duration = active && screenChanged && ValueAnimator.areAnimatorsEnabled()
-                ? AnimationSettings.load(this).transitionMs : 0;
+                ? settings.transitionMs : 0;
         if (motion == NavigationMotion.NFC_READ) {
             duration = Math.min(duration, NFC_FADE_MAX_MS);
         }
-        renderPanels(duration);
+        if (duration > 0 && previous != null) {
+            configureTransition(previous, fragment, motion, settings.sharedAxis, duration);
+        }
+        fragments.beginTransaction().setReorderingAllowed(true)
+                .replace(R.id.fragment, fragment).commitNow();
+        renderPanels(settings, duration);
         syncReader();
     }
 
@@ -347,15 +348,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void renderPanels(long duration) {
+    private void renderPanels(AnimationSettings settings, long duration) {
         TopBarFragment top = (TopBarFragment) getSupportFragmentManager().findFragmentById(R.id.top_bar);
         BottomBarFragment bottom = bottomBar();
         View bottomView = findViewById(R.id.bottom_bar);
         int visibility = pending.screen == Screen.CLEAR ? View.GONE : View.VISIBLE;
         boolean visibilityChanged = bottomView.getVisibility() != visibility;
         ViewGroup container = findViewById(R.id.coordinator);
-        TransitionManager.endTransitions(container);
-        if (duration > 0 && container.isLaidOut() && visibilityChanged) {
+        if (duration == 0) {
+            TransitionManager.endTransitions(container);
+        } else if (container.isLaidOut() && visibilityChanged) {
             TransitionSet motion = new TransitionSet()
                     .addTransition(new ChangeBounds().addTarget(R.id.fragment))
                     .addTransition(new Slide(Gravity.BOTTOM).addTarget(bottomView));
@@ -364,10 +366,10 @@ public class MainActivity extends AppCompatActivity {
         }
         bottomView.setVisibility(visibility);
         if (top.getView() != null) {
-            top.render(duration);
+            top.render(duration, settings.topBarMotion);
         }
         if (bottom.getView() != null) {
-            bottom.render(visibilityChanged ? 0 : duration);
+            bottom.render(visibilityChanged ? 0 : duration, settings.bottomBarMotion);
         }
     }
 
@@ -418,23 +420,23 @@ public class MainActivity extends AppCompatActivity {
 
     void onPrimaryAction() {
         Fragment workspace = getSupportFragmentManager().findFragmentById(R.id.fragment);
-        if (pending.cryptBusy || workspace == null || !workspace.isResumed()) {
+        if (pending.cryptBusy) {
             return;
         }
         switch (pending.screen) {
             case HOME: newVault(); break;
             case EDIT:
-                if (workspace instanceof EditAndChangeFragment) {
+                if (workspace instanceof EditAndChangeFragment && workspace.getView() != null) {
                     ((EditAndChangeFragment) workspace).save(this);
                 }
                 break;
             case ENCODED:
-                if (workspace instanceof EncodedInformationFragment) {
+                if (workspace instanceof EncodedInformationFragment && workspace.getView() != null) {
                     ((EncodedInformationFragment) workspace).askPassword(this);
                 }
                 break;
             case DECODED:
-                if (workspace instanceof DecodedInformationFragment) {
+                if (workspace instanceof DecodedInformationFragment && workspace.getView() != null) {
                     ((DecodedInformationFragment) workspace).toggleCopyMode();
                 }
                 break;
@@ -446,29 +448,22 @@ public class MainActivity extends AppCompatActivity {
     void onSecondaryAction() {
         Fragment workspace = getSupportFragmentManager().findFragmentById(R.id.fragment);
         if (pending.screen == Screen.DECODED && workspace instanceof DecodedInformationFragment
-                && workspace.isResumed()) {
+                && workspace.getView() != null) {
             editVault();
         }
     }
 
-    private void configureTransition(Fragment previous, Fragment next, NavigationMotion motion) {
-        AnimationSettings settings = AnimationSettings.load(this);
-        int duration = settings.transitionMs;
-        if (duration == 0) {
-            return;
-        }
+    private void configureTransition(Fragment previous, Fragment next, NavigationMotion motion,
+                                     boolean sharedAxis, long duration) {
         Transition enter;
         Transition exit;
-        if (motion == NavigationMotion.NFC_READ || !settings.sharedAxis) {
+        if (motion == NavigationMotion.NFC_READ || !sharedAxis) {
             enter = new Fade(Fade.IN);
             exit = new Fade(Fade.OUT);
         } else {
             boolean forward = motion == NavigationMotion.FORWARD;
             enter = new MaterialSharedAxis(MaterialSharedAxis.Z, forward);
             exit = new MaterialSharedAxis(MaterialSharedAxis.Z, forward);
-        }
-        if (motion == NavigationMotion.NFC_READ) {
-            duration = Math.min(duration, NFC_FADE_MAX_MS);
         }
         next.setEnterTransition(enter.setDuration(duration));
         previous.setExitTransition(exit.setDuration(duration));

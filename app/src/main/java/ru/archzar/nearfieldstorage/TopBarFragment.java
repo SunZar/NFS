@@ -21,21 +21,13 @@ public class TopBarFragment extends PanelFragment {
     @Override
     public void onViewCreated(@NonNull View view, Bundle state) {
         MainActivity activity = (MainActivity) requireActivity();
-        binding.leftAction.setOnClickListener(anchor -> {
-            if (!isChanging()) {
-                activity.onTopLeftAction(anchor);
-            }
-        });
-        binding.rightAction.setOnClickListener(anchor -> {
-            if (!isChanging()) {
-                activity.onTopRightAction(anchor);
-            }
-        });
-        render(0);
+        binding.leftAction.setOnClickListener(activity::onTopLeftAction);
+        binding.rightAction.setOnClickListener(activity::onTopRightAction);
+        render(0, AnimationSettings.PanelMotion.FADE);
     }
 
-    void render(long duration) {
-        changeContent(binding.barContent, duration, () -> {
+    void render(long duration, AnimationSettings.PanelMotion motion) {
+        changeContent(binding.barContent, duration, motion, false, () -> {
             MainActivity activity = (MainActivity) requireActivity();
             MainActivity.Screen screen = activity.currentScreen();
             binding.title.setText(activity.screenTitle());

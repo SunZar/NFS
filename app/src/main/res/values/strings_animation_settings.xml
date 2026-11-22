@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="animation_settings">Настройки</string>
+    <string name="animation_settings_screen_and_bars">Анимация экранов и панелей</string>
     <string name="animation_settings_transition">Переход между экранами</string>
-    <string name="animation_settings_transition_duration">Длительность, мс</string>
-    <string name="animation_settings_transition_hint">0 — мгновенная смена экрана.</string>
+    <string name="animation_settings_transition_duration">Общая длительность, мс</string>
+    <string name="animation_settings_transition_hint">0 — экран и панели меняются мгновенно.</string>
     <string name="animation_settings_transition_axis">Приближение при открытии</string>
     <string name="animation_settings_transition_fade">Плавное затухание</string>
     <string name="animation_settings_nfc_hint">После чтения NFC экран меняется с коротким затуханием, если анимация включена.</string>
+    <string name="animation_settings_top_bar">Верхняя панель</string>
+    <string name="animation_settings_bottom_bar">Нижняя панель</string>
+    <string name="animation_settings_bar_blink">Мигание</string>
     <string name="animation_settings_copy">Зелёная рамка при копировании</string>
     <string name="animation_settings_pulse_duration">Длительность цикла, мс</string>
     <string name="animation_settings_pulse_hint">0 — рамка светится постоянно.</string>
