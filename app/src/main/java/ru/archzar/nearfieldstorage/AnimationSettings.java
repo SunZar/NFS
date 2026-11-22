@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 final class AnimationSettings {
-    static final int DEFAULT_TRANSITION_MS = 220;
-    static final int DEFAULT_PULSE_MS = 2080;
+    static final int DEFAULT_TRANSITION_MS = 500;
+    static final int DEFAULT_PULSE_MS = 2000;
     static final int DEFAULT_PAUSE_MS = 500;
     static final int MAX_TRANSITION_MS = 2000;
     static final int MIN_PULSE_MS = 200;
