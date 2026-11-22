@@ -1,17 +1,37 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.NFS" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:statusBarColor">@color/black</item>
-        <item name="android:navigationBarColor">@color/black</item>
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.NFS" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:colorBackground">@color/screen_background</item>
+        <item name="android:windowBackground">@color/screen_background</item>
+        <item name="android:statusBarColor">@color/screen_background</item>
+        <item name="android:navigationBarColor">@color/screen_background</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+        <item name="android:textColorPrimary">@color/content_primary</item>
+        <item name="android:textColorSecondary">@color/content_secondary</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorPrimaryContainer">@color/accent_surface</item>
+        <item name="colorOnPrimaryContainer">@color/on_accent_surface</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@color/on_accent</item>
+        <item name="colorSecondaryContainer">@color/accent_surface</item>
+        <item name="colorOnSecondaryContainer">@color/on_accent_surface</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/content_primary</item>
+        <item name="colorSurfaceVariant">@color/field_surface</item>
+        <item name="colorOnSurfaceVariant">@color/content_secondary</item>
+        <item name="colorSurfaceContainer">@color/overlay_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/overlay_surface</item>
+        <item name="colorOutline">@color/divider</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="colorErrorContainer">@color/error_surface</item>
+        <item name="colorOnErrorContainer">@color/on_error_surface</item>
+        <item name="colorControlHighlight">@color/control_highlight</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.NFS.AlertDialog</item>
+        <item name="popupMenuStyle">@style/Widget.NFS.PopupMenu</item>
     </style>
 
-    <style name="Theme.NFS" parent="Base.Theme.NFS" />
-    <style name="PopupTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <item name="android:background">@color/gray</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:statusBarColor">@color/black</item>
-        <item name="android:navigationBarColor">@color/black</item>
-    </style>
+    <bool name="light_system_bars">true</bool>
 </resources>

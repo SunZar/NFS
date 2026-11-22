@@ -27,9 +27,14 @@ public class MainMenuFragment extends Fragment {
         binding.saveAndRewrite.setOnClickListener(ignored -> activity.newVault());
         binding.menu.setOnClickListener(anchor -> {
             PopupMenu menu = new PopupMenu(activity, anchor);
-            menu.getMenu().add(R.string.dump_open);
+            menu.getMenu().add(0, R.id.menu_open_dump, 0, R.string.dump_open);
+            menu.getMenu().add(0, R.id.menu_clear_tag, 1, R.string.clear_tag);
             menu.setOnMenuItemClickListener(item -> {
-                activity.openDump();
+                if (item.getItemId() == R.id.menu_open_dump) {
+                    activity.openDump();
+                } else {
+                    activity.startClearTag();
+                }
                 return true;
             });
             menu.show();

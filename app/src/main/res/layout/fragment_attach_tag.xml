@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:background="@color/dark_gray"
+    android:background="@color/screen_background"
     android:id="@+id/coordinator">
 
     <View
@@ -27,7 +27,7 @@
         android:layout_marginBottom="8dp"
         android:paddingHorizontal="8dp"
         app:layout_constraintTop_toBottomOf="@id/top_floating_island"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/write_actions"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -44,18 +44,19 @@
 
             <TextView
                 android:id="@+id/label"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="Запись информации"
-                android:singleLine="true"
-                android:textSize="16dp"
+                android:textSize="16sp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                android:textColor="@color/deep_green"
+                android:textColor="@color/accent"
                 android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="32dp"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/workspace"
@@ -71,8 +72,9 @@
 
                 <LinearLayout
                     android:id="@+id/banner"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
                     android:orientation="vertical"
                     android:gravity="center"
                     app:layout_constraintTop_toTopOf="parent"
@@ -83,21 +85,31 @@
                     <ImageView
                         android:id="@+id/arrow"
                         android:src="@drawable/round_arrow_upward_24"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="104dp"
+                        android:layout_height="104dp"
+                        android:importantForAccessibility="no" />
 
                     <TextView
                         android:id="@+id/attach_nfc"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/tap_to_write"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                        android:textColor="@color/white"
-                        android:textSize="26sp"
+                        android:breakStrategy="balanced"
                         android:gravity="center"
-                        android:layout_marginTop="-16dp">
+                        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                        android:textColor="@color/content_primary"
+                        android:textSize="24sp"
+                        tools:text="Приложите пустую метку 1 из 3" />
 
-                    </TextView>
+                    <TextView
+                        android:id="@+id/attach_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:breakStrategy="balanced"
+                        android:gravity="center"
+                        android:textColor="@color/content_secondary"
+                        android:textSize="16sp"
+                        tools:text="Держите до подтверждения" />
 
                 </LinearLayout>
 
@@ -108,6 +120,55 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
+
+    <LinearLayout
+        android:id="@+id/write_actions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/divider" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:text="@string/or"
+                android:textColor="@color/content_primary"
+                android:textSize="14sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/divider" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/save_dump"
+            style="@style/Widget.NFS.ActionButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/dump_save" />
+
+    </LinearLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_floating_island"
@@ -121,25 +182,21 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageButton
+            style="@style/Widget.NFS.ToolbarButton"
             android:id="@+id/back"
             android:src="@drawable/round_arrow_back_24"
-            android:background="?android:attr/actionBarItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:backgroundTint="@color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:contentDescription="@string/back"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:layout_margin="8dp"/>
+            android:layout_margin="8dp" />
 
         <TextView
             android:id="@+id/title"
             android:text="Запись"
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textColor="@color/white"
+            android:textColor="@color/content_primary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="36dp"

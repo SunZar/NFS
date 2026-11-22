@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="screen_background">#151515</color>
+    <color name="surface">#232323</color>
+    <color name="field_surface">#151515</color>
+    <color name="overlay_surface">#2B2B2B</color>
+    <color name="content_primary">#FFFFFF</color>
+    <color name="content_secondary">#C1C7BC</color>
+    <color name="accent">#8EB870</color>
+    <color name="on_accent">#172110</color>
+    <color name="accent_surface">#33492A</color>
+    <color name="on_accent_surface">#D9EACD</color>
+    <color name="icon_hero">#FFFFFF</color>
+    <color name="divider">#FFFFFF</color>
+    <color name="error">#FFB4B0</color>
+    <color name="on_error">#571D22</color>
+    <color name="error_surface">#742E34</color>
+    <color name="on_error_surface">#FBDDDC</color>
+    <color name="control_highlight">#30FFFFFF</color>
+    <color name="island_shadow">#BF151515</color>
+</resources>

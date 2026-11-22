@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:background="@color/dark_gray"
+    android:background="@color/screen_background"
     android:id="@+id/coordinator">
 
     <View
@@ -47,9 +47,9 @@
                 android:layout_height="wrap_content"
                 android:text="Главный экран"
                 android:singleLine="true"
-                android:textSize="16dp"
+                android:textSize="16sp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                android:textColor="@color/deep_green"
+                android:textColor="@color/accent"
                 android:layout_marginStart="12dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="32dp"
@@ -91,7 +91,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/tap_to_read"
                         android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                        android:textColor="@color/white"
+                        android:textColor="@color/content_primary"
                         android:textSize="26sp"
                         android:gravity="center"
                         android:layout_marginTop="-16dp"/>
@@ -117,20 +117,15 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.button.MaterialButton
+            style="@style/Widget.NFS.ActionButton"
             android:id="@+id/save_and_rewrite"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Записать данные"
-            android:singleLine="true"
-            android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textSize="18sp"
-            android:padding="16dp"
-            android:backgroundTint="@color/deep_green"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:cornerRadius="16dp"/>
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -148,26 +143,21 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageButton
+            style="@style/Widget.NFS.ToolbarButton"
             android:id="@+id/menu"
             android:src="@drawable/round_more_vert_24"
             android:contentDescription="@string/more_options"
-            android:background="?android:attr/actionBarItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:backgroundTint="@color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:layout_margin="8dp"/>
+            android:layout_margin="8dp" />
 
         <TextView
             android:id="@+id/title"
             android:text="NFS"
             android:singleLine="true"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textColor="@color/white"
+            android:textColor="@color/content_primary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"

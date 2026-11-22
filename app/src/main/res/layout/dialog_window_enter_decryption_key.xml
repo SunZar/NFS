@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:padding="16dp">
 
-    <EditText
-        android:id="@+id/decryption_key"
-        android:hint="@string/master_password"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/password_input"
+        style="@style/Widget.NFS.ValidationField"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textPassword"
-        android:saveEnabled="false"
-        android:importantForAutofill="no"
-        android:imeOptions="flagNoPersonalizedLearning|flagNoExtractUi" />
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/decryption_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:hint="@string/master_password"
+            android:imeOptions="actionDone|flagNoPersonalizedLearning|flagNoExtractUi"
+            android:importantForAutofill="no"
+            android:inputType="textPassword"
+            android:minHeight="52dp"
+            android:padding="12dp"
+            android:saveEnabled="false"
+            android:singleLine="false"
+            android:textColor="@color/content_primary"
+            android:textColorHint="@color/content_secondary" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
 </RelativeLayout>

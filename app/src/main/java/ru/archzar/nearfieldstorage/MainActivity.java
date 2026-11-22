@@ -1,6 +1,5 @@
 package ru.archzar.nearfieldstorage;
 
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -23,6 +22,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
@@ -34,6 +34,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,12 +58,13 @@ import ru.archzar.nearfieldstorage.nfc.NfcVault;
 import ru.archzar.nearfieldstorage.utilities.VaultParts;
 
 public class MainActivity extends AppCompatActivity {
-    private enum Screen { HOME, ENCODED, DECODED, EDIT, WRITE }
+    private enum Screen { HOME, ENCODED, DECODED, EDIT, WRITE, CLEAR }
 
     public static final class PendingOperations extends ViewModel {
         private NfcVault.WriteSession session;
         private boolean loaded;
-        private boolean exportingDump;
+        private final MutableLiveData<Boolean> exportingDump = new MutableLiveData<>(false);
+        private boolean writePaused;
         private boolean openingDump;
         private final ExecutorService documents = Executors.newSingleThreadExecutor();
         private final MutableLiveData<DumpResult> importResult = new MutableLiveData<>();
@@ -80,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
     private final List<NfcVault.Snapshot> source = new ArrayList<>();
     private VaultParts.Assembly assembly = new VaultParts.Assembly();
     private volatile Scan scan;
+    private NfcVault.ClearSession clearing;
     private NfcAdapter adapter;
     private PendingOperations pending;
     private ActivityResultLauncher<String[]> openDocument;
@@ -130,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
         }, this::onDumpSelected);
         createDocument = registerForActivityResult(
                 new ActivityResultContracts.CreateDocument("text/plain"), this::saveDumpTo);
-        if (savedInstanceState == null && !pending.exportingDump) {
+        if (savedInstanceState == null && !isExporting()) {
             exportFile().delete();
         }
         if (!pending.loaded) {
@@ -138,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 pending.session = NfcVault.WriteSession.restore(checkpointFile());
                 if (pending.session != null && pending.session.completed() < pending.session.count()) {
+                    pending.writePaused = exportFile().exists();
                     toast(R.string.resuming_write);
                 }
             } catch (IOException error) {
@@ -152,6 +158,12 @@ public class MainActivity extends AppCompatActivity {
         });
         show(pending.session == null ? Screen.HOME : Screen.WRITE);
         pending.importResult.observe(this, ignored -> finishImport());
+        pending.exportingDump.observe(this, ignored -> {
+            if (active && screen == Screen.WRITE) {
+                syncReader();
+                refreshScanScreen();
+            }
+        });
         pending.progress.observe(this, session -> {
             if (active && screen == Screen.WRITE && pending.session == session) {
                 if (session.completed() == session.count()) {
@@ -179,6 +191,10 @@ public class MainActivity extends AppCompatActivity {
         active = true;
         if (screen == Screen.WRITE && pending.session.completed() == pending.session.count()) {
             written();
+        } else if (screen == Screen.CLEAR && clearing != null && clearing.completed()) {
+            tagCleared();
+        } else if (screen == Screen.CLEAR && clearing != null && clearing.isWriting()) {
+            refreshScanScreen();
         } else if (stopped && pending.session == null) {
             show(Screen.HOME);
         } else {
@@ -223,12 +239,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void show(Screen target) {
         screen = target;
+        if (target != Screen.CLEAR) {
+            clearing = null;
+        }
         Fragment fragment;
         switch (target) {
             case ENCODED: fragment = new EncodedInformationFragment(); break;
             case DECODED: fragment = new DecodedInformationFragment(); break;
             case EDIT: fragment = new EditAndChangeFragment(); break;
-            case WRITE: fragment = new AttachTagFragment(); break;
+            case WRITE:
+            case CLEAR: fragment = new AttachTagFragment(); break;
             default: fragment = new MainMenuFragment(); break;
         }
         getSupportFragmentManager().beginTransaction().setReorderingAllowed(true)
@@ -243,8 +263,13 @@ public class MainActivity extends AppCompatActivity {
         }
         if (active && dialog == null && !pending.openingDump
                 && adapter != null && adapter.isEnabled()
-                && (screen == Screen.HOME || screen == Screen.WRITE)) {
-            Scan request = new Scan(screen == Screen.WRITE ? pending.session : null);
+                && (screen == Screen.HOME
+                        || (screen == Screen.WRITE && !isExporting() && !pending.writePaused
+                                && pending.session.writeProblem() == null)
+                        || (screen == Screen.CLEAR && (clearing == null
+                                || (!clearing.completed() && !clearing.isWriting()))))) {
+            Scan request = new Scan(screen == Screen.WRITE ? pending.session : null,
+                    screen == Screen.CLEAR, clearing);
             scan = request;
             adapter.enableReaderMode(this, tag -> scanTag(request, tag), READER_FLAGS, null);
         }
@@ -260,7 +285,12 @@ public class MainActivity extends AppCompatActivity {
                     if (scan != request) {
                         return;
                     }
-                    if (request.write == null) {
+                    if (request.clear != null) {
+                        request.clear.clear(tag, () -> scan == request);
+                    } else if (request.clearMode) {
+                        NfcVault.ClearSession candidate = NfcVault.ClearSession.identify(tag);
+                        runOnUiThread(() -> confirmClearTag(request, candidate));
+                    } else if (request.write == null) {
                         NfcVault.Snapshot snapshot = NfcVault.read(tag);
                         runOnUiThread(() -> finishRead(request, snapshot));
                     } else {
@@ -278,7 +308,16 @@ public class MainActivity extends AppCompatActivity {
                     if (request.write != null) {
                         pending.progress.postValue(request.write);
                     }
-                    runOnUiThread(() -> request.busy.set(false));
+                    runOnUiThread(() -> {
+                        request.busy.set(false);
+                        if (active && request.clear != null && request.clear == clearing) {
+                            if (request.clear.completed()) {
+                                tagCleared();
+                            } else if (scan == null) {
+                                syncReader();
+                            }
+                        }
+                    });
                 }
             });
         } catch (java.util.concurrent.RejectedExecutionException closed) {
@@ -316,10 +355,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void nfcError(Scan request, int message, Object... args) {
         runOnUiThread(() -> {
-            if (scan == request) {
+            if (scan == request || (active && request.clear != null && request.clear == clearing)) {
                 if (request.write != null && request.write.completed() == request.write.count()) {
                     written();
-                } else {
+                } else if (request.clear == null || !request.clear.completed()) {
                     toast(message, args);
                     refreshScanScreen();
                 }
@@ -330,6 +369,47 @@ public class MainActivity extends AppCompatActivity {
     private void written() {
         toast(R.string.written, pending.session.count());
         home();
+    }
+
+    void startClearTag() {
+        if (screen != Screen.HOME || pending.openingDump) {
+            return;
+        }
+        if (adapter == null) {
+            toast(R.string.nfc_unavailable);
+            return;
+        }
+        clearUnlocked();
+        show(Screen.CLEAR);
+    }
+
+    private void confirmClearTag(Scan request, NfcVault.ClearSession candidate) {
+        if (scan != request) {
+            return;
+        }
+        AlertDialog confirm = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.clear_tag)
+                .setMessage(R.string.clear_warning)
+                .setNegativeButton(android.R.string.cancel, (ignored, which) -> home())
+                .setPositiveButton(R.string.clear_continue, (ignored, which) -> {
+                    clearing = candidate;
+                    refreshScanScreen();
+                }).create();
+        confirm.setOnCancelListener(ignored -> home());
+        if (showDialog(confirm)) {
+            confirm.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(MaterialColors.getColor(
+                    confirm.getButton(AlertDialog.BUTTON_POSITIVE),
+                    com.google.android.material.R.attr.colorError));
+        }
+    }
+
+    private void tagCleared() {
+        toast(R.string.tag_cleared);
+        home();
+    }
+
+    boolean isClearingTag() {
+        return screen == Screen.CLEAR;
     }
 
     private int readHint() {
@@ -347,19 +427,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
     String writePrompt() {
+        if (screen == Screen.WRITE && pending.writePaused) {
+            return getString(isExporting() ? R.string.exporting_dump : R.string.write_paused);
+        }
+        if (screen == Screen.WRITE && pending.session.writeProblem() != null) {
+            return getString(R.string.write_unavailable);
+        }
+        if (adapter == null) {
+            return getString(R.string.nfc_unavailable);
+        }
+        if (!adapter.isEnabled()) {
+            return getString(R.string.nfc_disabled_title);
+        }
+        return getString(screen == Screen.CLEAR && clearing != null
+                ? R.string.tap_same_tag : R.string.tap_tag);
+    }
+
+    String writeHint() {
+        if (screen == Screen.WRITE && pending.writePaused) {
+            return isExporting() ? "" : getString(R.string.write_resume_hint);
+        }
+        if (screen == Screen.WRITE && pending.session.writeProblem() != null) {
+            NfcVault.Problem problem = pending.session.writeProblem();
+            return getString(problem.message, problem.arguments);
+        }
+        if (adapter == null) {
+            return "";
+        }
+        if (!adapter.isEnabled()) {
+            return getString(R.string.nfc_settings_hint);
+        }
+        if (screen == Screen.CLEAR) {
+            return getString(clearing == null ? R.string.confirm_after_scan : R.string.hold_tag);
+        }
         NfcVault.WriteSession session = pending.session;
         if (session == null || session.completed() == session.count()) {
-            return getString(R.string.tap_to_write);
-        }
-        if (adapter == null || !adapter.isEnabled()) {
-            return readPrompt();
+            return "";
         }
         return getString(session.nextIsOriginal() ? R.string.next_original : R.string.next_blank,
                 session.nextNumber(), session.count());
     }
 
     void tapBanner() {
-        if (adapter == null) {
+        if (screen == Screen.WRITE && pending.writePaused) {
+            if (!isExporting()) {
+                pending.writePaused = false;
+                syncReader();
+                refreshScanScreen();
+            }
+        } else if (adapter == null) {
             toast(R.string.nfc_unavailable);
         } else if (!adapter.isEnabled()) {
             startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
@@ -442,25 +558,48 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void showExportMenu(View anchor) {
-        if (!assembly.isComplete() || cryptBusy || pending.exportingDump) {
+        if (!assembly.isComplete() || cryptBusy || isExporting()) {
             return;
         }
         PopupMenu menu = new PopupMenu(this, anchor);
         menu.getMenu().add(R.string.dump_save);
         menu.setOnMenuItemClickListener(item -> {
-            stageExport();
+            if (assembly.isComplete() && !isExporting()) {
+                pending.exportingDump.setValue(true);
+                stageExport(assembly.toDump());
+            }
             return true;
         });
         menu.show();
     }
 
-    private void stageExport() {
-        if (!assembly.isComplete() || pending.exportingDump) {
+    void exportPreparedWrite() {
+        if (screen != Screen.WRITE || isExporting()) {
             return;
         }
-        pending.exportingDump = true;
+        Scan request = scan;
+        if (pending.session.isWriting()
+                || (request != null && !request.busy.compareAndSet(false, true))) {
+            toast(R.string.wait_for_write);
+            return;
+        }
+        pending.writePaused = true;
+        pending.exportingDump.setValue(true);
+        try {
+            stageExport(pending.session.toDump());
+        } catch (NfcVault.Problem | IllegalArgumentException | IllegalStateException error) {
+            pending.exportingDump.setValue(false);
+            toast(R.string.dump_save_failed);
+        }
+    }
+
+    boolean isExporting() {
+        return Boolean.TRUE.equals(pending.exportingDump.getValue());
+    }
+
+    private void stageExport(String dump) {
+        Screen origin = screen;
         int operation = generation;
-        String dump = assembly.toDump();
         File file = exportFile();
         pending.documents.execute(() -> {
             try (OutputStream output = new FileOutputStream(file)) {
@@ -470,7 +609,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             runOnUiThread(() -> {
-                if (!active || operation != generation || isDestroyed()) {
+                if (!active || operation != generation || screen != origin || isDestroyed()) {
                     finishExport(file, 0);
                     return;
                 }
@@ -489,7 +628,7 @@ public class MainActivity extends AppCompatActivity {
             finishExport(file, 0);
             return;
         }
-        pending.exportingDump = true;
+        pending.exportingDump.setValue(true);
         pending.documents.execute(() -> {
             try (InputStream input = new FileInputStream(file);
                  OutputStream output = getContentResolver().openOutputStream(uri)) {
@@ -511,7 +650,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void finishExport(File file, int message) {
         file.delete();
-        pending.exportingDump = false;
+        pending.exportingDump.setValue(false);
         if (message != 0 && !isDestroyed()) {
             toast(message);
         }
@@ -579,10 +718,6 @@ public class MainActivity extends AppCompatActivity {
             toast(R.string.dump_loading);
             return;
         }
-        if (adapter == null) {
-            toast(R.string.nfc_unavailable);
-            return;
-        }
         clearUnlocked();
         show(Screen.EDIT);
     }
@@ -642,6 +777,7 @@ public class MainActivity extends AppCompatActivity {
                     if (generation == operation && !getSupportFragmentManager().isStateSaved()) {
                         cryptBusy = false;
                         pending.session = session;
+                        pending.writePaused = false;
                         WindowInsetsControllerCompat insets =
                                 ViewCompat.getWindowInsetsController(findViewById(R.id.coordinator));
                         if (insets != null) {
@@ -650,8 +786,6 @@ public class MainActivity extends AppCompatActivity {
                         show(Screen.WRITE);
                     }
                 });
-            } catch (NfcVault.Problem error) {
-                prepareError(operation, error.message, error.arguments);
             } catch (IllegalArgumentException error) {
                 prepareError(operation, R.string.vault_too_large);
             } catch (GeneralSecurityException error) {
@@ -711,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
                 if (pending.session.isWriting() || (scan != null && scan.busy.get())) {
                     toast(R.string.wait_for_write);
                 } else if (pending.session.hasStarted()) {
-                    showDialog(new AlertDialog.Builder(this)
+                    showDialog(new MaterialAlertDialogBuilder(this)
                             .setTitle(R.string.cancel_write)
                             .setMessage(R.string.partial_write_warning)
                             .setNegativeButton(R.string.keep_writing, null)
@@ -724,6 +858,13 @@ public class MainActivity extends AppCompatActivity {
                     show(Screen.EDIT);
                 }
                 break;
+            case CLEAR:
+                if ((clearing != null && clearing.isWriting()) || (scan != null && scan.busy.get())) {
+                    toast(R.string.wait_for_clear);
+                } else {
+                    home();
+                }
+                break;
             default:
                 home();
         }
@@ -734,6 +875,7 @@ public class MainActivity extends AppCompatActivity {
             pending.session.discard();
         }
         pending.session = null;
+        pending.writePaused = false;
         clearUnlocked();
         show(Screen.HOME);
     }
@@ -762,10 +904,14 @@ public class MainActivity extends AppCompatActivity {
 
     private static final class Scan {
         final NfcVault.WriteSession write;
+        final boolean clearMode;
+        final NfcVault.ClearSession clear;
         final AtomicBoolean busy = new AtomicBoolean();
 
-        Scan(NfcVault.WriteSession write) {
+        Scan(NfcVault.WriteSession write, boolean clearMode, NfcVault.ClearSession clear) {
             this.write = write;
+            this.clearMode = clearMode;
+            this.clear = clear;
         }
     }
 

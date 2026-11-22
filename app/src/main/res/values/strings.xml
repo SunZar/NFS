@@ -8,8 +8,8 @@
     <string name="nfc_unavailable">На этом телефоне нет NFC</string>
     <string name="nfc_disabled">NFC выключен\nНажмите для настроек</string>
     <string name="next_read_tag">Приложите метку %1$d из %2$d\nНажмите для сброса</string>
-    <string name="next_original">Приложите исходную метку %1$d из %2$d\nДержите до подтверждения</string>
-    <string name="next_blank">Приложите пустую метку %1$d из %2$d\nДержите до подтверждения</string>
+    <string name="next_original">Исходная метка %1$d из %2$d\nДержите до подтверждения</string>
+    <string name="next_blank">Пустая метка %1$d из %2$d\nДержите до подтверждения</string>
     <string name="wrong_read_tag">Нужна метка №%1$d из того же набора</string>
     <string name="wrong_write_tag">Приложите нужную метку №%1$d ещё раз</string>
     <string name="tag_changed">На метке другие данные. Запись пропущена.</string>
@@ -61,4 +61,28 @@
     <string name="dump_loading">Дамп ещё загружается</string>
     <string name="dump_save_failed">Не удалось сохранить файл дампа</string>
     <string name="document_picker_unavailable">Системный выбор файлов недоступен</string>
+    <string name="back">Назад</string>
+    <string name="or">ИЛИ</string>
+    <string name="write_title">Запись</string>
+    <string name="write_label">Запись информации</string>
+    <string name="tap_tag">Приложите метку</string>
+    <string name="hold_tag">Держите до подтверждения</string>
+    <string name="nfc_disabled_title">NFC выключен</string>
+    <string name="nfc_settings_hint">Нажмите, чтобы открыть настройки</string>
+    <string name="clear_title">Очистка</string>
+    <string name="clear_tag">Очистить NFC-метку</string>
+    <string name="clear_warning">Все данные NDEF на этой метке будут удалены. Если метка входит в набор, для восстановления данных понадобится сохранённый TXT-дамп.</string>
+    <string name="clear_continue">Очистить</string>
+    <string name="clear_same_tag">Приложите ту же метку для завершения очистки</string>
+    <string name="confirm_after_scan">Затем подтвердите очистку</string>
+    <string name="tap_same_tag">Приложите ту же метку</string>
+    <string name="tag_cleared">Метка очищена и готова к записи</string>
+    <string name="wait_for_clear">Дождитесь завершения очистки</string>
+    <string name="master_password_hint">Пароль для шифрования записываемой информации</string>
+    <string name="write_unavailable">Запись на метки недоступна</string>
+    <string name="write_paused">Запись приостановлена</string>
+    <string name="write_resume_hint">Нажмите, чтобы продолжить запись</string>
+    <string name="exporting_dump">Сохранение дампа</string>
+    <item type="id" name="menu_open_dump" />
+    <item type="id" name="menu_clear_tag" />
 </resources>

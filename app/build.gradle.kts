@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -11,8 +10,8 @@ android {
         applicationId = "ru.archzar.nearfieldstorage"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -24,10 +23,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 dependencies {
@@ -35,8 +30,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(libs.core.ktx)
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.24")
+    implementation(libs.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

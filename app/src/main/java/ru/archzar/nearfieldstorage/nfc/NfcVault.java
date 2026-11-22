@@ -74,6 +74,61 @@ public final class NfcVault {
         throw new Problem(R.string.foreign_tag);
     }
 
+    public static final class ClearSession {
+        private final byte[] targetId;
+        private volatile boolean writing;
+        private volatile boolean completed;
+
+        private ClearSession(byte[] targetId) {
+            this.targetId = targetId;
+        }
+
+        public static ClearSession identify(Tag tag) throws Problem {
+            if (!requireNdef(tag).isWritable()) {
+                throw new Problem(R.string.tag_read_only);
+            }
+            return new ClearSession(requireId(tag));
+        }
+
+        public boolean completed() {
+            return completed;
+        }
+
+        public boolean isWriting() {
+            return writing;
+        }
+
+        public void clear(Tag tag, BooleanSupplier active)
+                throws IOException, FormatException, Problem {
+            if (completed || !active.getAsBoolean()) {
+                return;
+            }
+            byte[] id = requireId(tag);
+            if (!Arrays.equals(targetId, id)) {
+                throw new Problem(R.string.clear_same_tag);
+            }
+            writing = true;
+            try (Ndef ndef = requireNdef(tag)) {
+                ndef.connect();
+                if (!ndef.isWritable()) {
+                    throw new Problem(R.string.tag_read_only);
+                }
+                if (!active.getAsBoolean()) {
+                    return;
+                }
+                NdefRecord empty = new NdefRecord(NdefRecord.TNF_EMPTY, null, null, null);
+                NdefMessage reset = new NdefMessage(empty);
+                ndef.writeNdefMessage(reset);
+                if (!reset.equals(ndef.getNdefMessage())) {
+                    throw new Problem(R.string.verify_failed);
+                }
+                completed = true;
+            } finally {
+                writing = false;
+            }
+        }
+    }
+
     public static final class Snapshot {
         private final byte[] id;
         private final byte[] payload;
@@ -104,14 +159,14 @@ public final class NfcVault {
         private final AtomicFile checkpoint;
         private final List<Snapshot> original;
         private final List<NdefMessage> messages;
+        private final Problem writeProblem;
         private final List<byte[]> writtenIds = new ArrayList<>();
         private byte[] attemptedId;
         private volatile int completed;
         private volatile boolean started;
         private volatile boolean writing;
 
-        public WriteSession(File file, List<VaultParts.Part> parts, List<Snapshot> original)
-                throws Problem {
+        public WriteSession(File file, List<VaultParts.Part> parts, List<Snapshot> original) {
             checkpoint = new AtomicFile(file);
             this.original = new ArrayList<>(original);
             if (parts.size() < original.size()) {
@@ -119,18 +174,9 @@ public final class NfcVault {
             }
             messages = new ArrayList<>(parts.size());
             for (VaultParts.Part part : parts) {
-                NdefMessage message = new NdefMessage(
-                        NdefRecord.createMime(MIME_TYPE, part.encode()));
-                messages.add(message);
-                int slot = part.number - 1;
-                if (slot < original.size()) {
-                    Snapshot old = original.get(slot);
-                    if (!old.writable) {
-                        throw new Problem(R.string.original_read_only, part.number);
-                    }
-                    checkCapacity(part.number, message, old.capacity);
-                }
+                messages.add(new NdefMessage(NdefRecord.createMime(MIME_TYPE, part.encode())));
             }
+            writeProblem = validateOriginals();
         }
 
         private WriteSession(AtomicFile checkpoint, List<NdefMessage> messages,
@@ -138,6 +184,26 @@ public final class NfcVault {
             this.checkpoint = checkpoint;
             this.messages = messages;
             this.original = original;
+            writeProblem = validateOriginals();
+        }
+
+        private Problem validateOriginals() {
+            for (int slot = 0; slot < original.size(); slot++) {
+                Snapshot old = original.get(slot);
+                if (!old.writable) {
+                    return new Problem(R.string.original_read_only, slot + 1);
+                }
+                try {
+                    checkCapacity(slot + 1, messages.get(slot), old.capacity);
+                } catch (Problem error) {
+                    return error;
+                }
+            }
+            return null;
+        }
+
+        public Problem writeProblem() {
+            return writeProblem;
         }
 
         public static WriteSession restore(File file) throws IOException {
@@ -247,6 +313,14 @@ public final class NfcVault {
             return messages.size();
         }
 
+        public String toDump() throws Problem {
+            VaultParts.Assembly prepared = new VaultParts.Assembly();
+            for (NdefMessage message : messages) {
+                prepared.add(VaultParts.Part.parse(payload(message)));
+            }
+            return prepared.toDump();
+        }
+
         public int completed() {
             return completed;
         }
@@ -277,6 +351,9 @@ public final class NfcVault {
                 throws IOException, FormatException, Problem {
             if (completed >= count() || !active.getAsBoolean()) {
                 return;
+            }
+            if (writeProblem != null) {
+                throw writeProblem;
             }
             writing = true;
             try {

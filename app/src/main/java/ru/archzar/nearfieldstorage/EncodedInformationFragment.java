@@ -1,6 +1,5 @@
 package ru.archzar.nearfieldstorage;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -10,7 +9,10 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.Arrays;
 
@@ -42,9 +44,10 @@ public class EncodedInformationFragment extends Fragment {
         if (!activity.hasEncryptedData()) {
             return;
         }
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
         DialogWindowEnterDecryptionKeyBinding input =
-                DialogWindowEnterDecryptionKeyBinding.inflate(getLayoutInflater());
-        AlertDialog dialog = new AlertDialog.Builder(activity)
+                DialogWindowEnterDecryptionKeyBinding.inflate(LayoutInflater.from(builder.getContext()));
+        AlertDialog dialog = builder
                 .setTitle(R.string.enter_master_password)
                 .setView(input.getRoot())
                 .setNegativeButton(android.R.string.cancel, null)
@@ -58,7 +61,7 @@ public class EncodedInformationFragment extends Fragment {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
             Editable entry = input.decryptionKey.getText();
             if (entry.length() == 0) {
-                input.decryptionKey.setError(getString(R.string.password_required));
+                input.passwordInput.setError(getString(R.string.password_required));
                 return;
             }
             char[] password = new char[entry.length()];
